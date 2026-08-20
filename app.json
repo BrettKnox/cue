@@ -1,0 +1,38 @@
+{
+  "expo": {
+    "name": "Cue",
+    "slug": "cue",
+    "version": "1.0.0",
+    "runtimeVersion": { "policy": "appVersion" },
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "scheme": "cue",
+    "primaryLanguage": "en",
+    "description": "Live transcription and recall for conversations. Cue listens, keeps the thread, and tells you what was said and what you agreed to.",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.wukoric.cue",
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "Cue uses the microphone to transcribe the conversation you are in.",
+        "NSSpeechRecognitionUsageDescription": "Cue turns what it hears into text so you can read and search the conversation afterwards."
+      }
+    },
+    "android": {
+      "package": "com.wukoric.cue",
+      "edgeToEdgeEnabled": true,
+      "predictiveBackGestureEnabled": true,
+      "permissions": ["android.permission.RECORD_AUDIO"]
+    },
+    "plugins": [
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "Cue uses the microphone to transcribe the conversation you are in.",
+          "speechRecognitionPermission": "Cue turns what it hears into text so you can read and search the conversation afterwards.",
+          "androidSpeechServicePackages": ["com.google.android.googlequicksearchbox"]
+        }
+      ]
+    ]
+  }
+}
