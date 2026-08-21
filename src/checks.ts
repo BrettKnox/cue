@@ -51,14 +51,13 @@ assert.ok(SEARCH_SQL.includes(`ESCAPE '${LIKE_ESCAPE}'`), 'SEARCH_SQL escape cha
 const sqlite = new DatabaseSync(':memory:');
 sqlite.exec(SCHEMA);
 sqlite.exec("INSERT INTO conversations (id, started_at, title) VALUES (1, 1000, 'Roof quote')");
-const rows = [
+const rows: [number, number, number, string][] = [
   [1, 1, 1001, 'the deposit is 100% refundable'],
   [2, 1, 1002, 'we agreed on a_b testing'],
   [3, 1, 1003, 'nothing relevant here'],
 ];
-for (const [id, cid, at, text] of rows)
-  sqlite.prepare('INSERT INTO utterances (id, conversation_id, at, text) VALUES (?, ?, ?, ?)')
-    .run(id, cid, at, text);
+const ins = sqlite.prepare('INSERT INTO utterances (id, conversation_id, at, text) VALUES (?, ?, ?, ?)');
+for (const r of rows) ins.run(r[0], r[1], r[2], r[3]);
 
 const find = (q: string) => sqlite.prepare(SEARCH_SQL).all(likePattern(q)) as { id: number; title: string }[];
 
