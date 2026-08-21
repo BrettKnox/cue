@@ -6,9 +6,14 @@ and what to do next**, and should be deleted once the app is confirmed working o
 
 ## The one thing that matters
 
-Cue has never run on a real phone. Everything below the transcription layer is verified in
-the browser test lane; **the native speech recogniser has never been exercised.** Until it
-is, the core feature is unproven. Do that first.
+**The app is BUILT, INSTALLED and RUNNING on the phone** (`com.wukoric.cue`, Galaxy S24 Ultra,
+verified by screenshot 2026-08-21 18:51 — dark theme, correct layout, tab bar, Listen button).
+Tapping Listen correctly raised Android's "Allow Cue to record audio?" dialog, which proves the
+native speech module is wired and `requestPermissionsAsync()` fires.
+
+The earlier session STOPPED at that dialog on purpose: granting microphone permission is the
+user's decision, not something to click through while he is asleep. **Do not tap Allow for him.**
+The remaining unknown is whether spoken words actually become text, and only he can test that.
 
 ## State at handoff
 
@@ -21,11 +26,10 @@ Five commits, working tree clean.
 Not done: **transcription on device**, people/relationship notes, onboarding, EAS config,
 and the LLM key proxy (the key currently ships inside the bundle — dogfood only).
 
-## Where the Android build stopped
+## The Android build (done — kept for the next machine or a clean rebuild)
 
-`npx expo run:android` was mid-Gradle-build when the session's weekly token limit ran out.
-Prebuild had already succeeded and `android/` exists. Two failures were hit and fixed, so do
-not re-hit them:
+The debug APK built and installed (54 MB, in `android/app/build/outputs/apk/debug/`). Two
+failures were hit on the way; do not re-hit them:
 
 1. **`ANDROID_HOME` is not set on this machine.** Gradle fails with "SDK location not found".
    Already fixed by `android/local.properties` containing
@@ -39,25 +43,22 @@ not re-hit them:
 
 ## Do this, in order
 
-1. `adb devices` — the phone is a Galaxy S24 Ultra (`SM_S928U`) on wireless debugging at
-   `10.0.0.238`. **The pairing will very likely be dead** (it does not survive a phone reboot
-   or a long sleep). If so, stop and ask the user for a fresh pairing code and both ports from
-   Developer options > Wireless debugging; you cannot recover this without them.
-2. Build and install: from `C:\Users\bman0\Code\Cue`, run `npx expo run:android`. Expect
-   several minutes. Output is buffered, so poll `android/app/build/intermediates` and the java
-   process CPU for progress rather than the log.
-3. Give it a working LLM key so summaries do something. The user's `OPENROUTER_API_KEY` is
+1. Give it a working LLM key so summaries do something. The user's `OPENROUTER_API_KEY` is
    already in their user environment and `deepseek/deepseek-v4-flash` is confirmed live on
    OpenRouter. Metro reads `app.config.js` at bundle time, so the key must be in the
    environment when the dev server starts:
    `CUE_LLM_BASE_URL=https://openrouter.ai/api/v1 CUE_LLM_MODEL=deepseek/deepseek-v4-flash CUE_LLM_API_KEY=$OPENROUTER_API_KEY npx expo start --dev-client`
    Never print the key.
-4. Verify what you can without the user: launch the app, `adb exec-out screencap -p > shot.png`
-   and look at it, tap Listen with `adb shell input tap`, accept the microphone permission,
-   and watch `adb logcat` for the recogniser starting. Confirm no crash.
-5. **Stop there and hand back.** Only the user can speak into the phone, so only they can
-   confirm words actually appear. Tell them plainly what you verified and what needs their
-   voice.
+2. Build the two remaining software features, in this order: **people/relationship notes**
+   (a `people` table, notes attached to a conversation) and then **onboarding** (one screen
+   saying what Cue records and that transcripts stay on the device). Re-run the four-way
+   accent x scheme audit after any UI change.
+3. Do not re-verify the device build unless something changed — it is already proven. If you
+   do need the phone and the adb pairing is dead (it does not survive a reboot or long sleep),
+   ask the user for a fresh pairing code and both ports from Developer options > Wireless
+   debugging. You cannot recover it without them.
+4. **Hand back honestly.** Only the user can grant the mic permission and speak into the phone.
+   Tell him plainly: tap Listen, choose "While using the app", say a few sentences, tap Stop.
 
 ## Rules that are easy to get wrong
 
