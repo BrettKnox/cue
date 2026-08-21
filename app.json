@@ -3,7 +3,9 @@
     "name": "Cue",
     "slug": "cue",
     "version": "1.0.0",
-    "runtimeVersion": { "policy": "appVersion" },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "scheme": "cue",
@@ -22,7 +24,13 @@
       "package": "com.wukoric.cue",
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": true,
-      "permissions": ["android.permission.RECORD_AUDIO"]
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ],
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#1F6FEB"
+      }
     },
     "plugins": [
       [
@@ -30,9 +38,20 @@
         {
           "microphonePermission": "Cue uses the microphone to transcribe the conversation you are in.",
           "speechRecognitionPermission": "Cue turns what it hears into text so you can read and search the conversation afterwards.",
-          "androidSpeechServicePackages": ["com.google.android.googlequicksearchbox"]
+          "androidSpeechServicePackages": [
+            "com.google.android.googlequicksearchbox"
+          ]
         }
       ]
-    ]
+    ],
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#10141A"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    }
   }
 }
