@@ -39,6 +39,19 @@ LLM config is injected by `app.config.js` from the environment; nothing is commi
 `CUE_LLM_MODEL` (default `deepseek-v4-flash`). With no key the app still transcribes and
 stores; it just says summaries are unavailable.
 
+## Verifying without a device
+`npx expo export --platform web` then serve `dist/` and drive it with Playwright (the venv at
+`Code\OpsBrain\.venv` has it). This is how the layout and contrast numbers get *measured*
+rather than claimed. Measured 2026-08-21 at 390x844: Listen button 358x64, tab bar 48dp, and all
+four tab labels over 4.5:1 in both schemes (inactive 7.61 light / 8.2 dark). Zero console errors.
+Web is a **test lane only** — the product ships to phones, and speech recognition there uses the
+Web Speech API, not the native recogniser.
+
+Two build deps exist purely because this project was hand-scaffolded rather than made with
+`create-expo-app`: `babel-preset-expo` (without it metro dies with a misleading
+`transformFile of undefined`) and `metro.config.js` adding `wasm` to `assetExts` (expo-sqlite's
+web build is WebAssembly). Do not "tidy" either away.
+
 ## Hard rules
 - **Speech recognition needs a dev build, not Expo Go** — it is a native module with a
   config plugin. `npx expo run:android` or an EAS dev build.
