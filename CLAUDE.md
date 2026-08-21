@@ -29,8 +29,15 @@ Matches the house pattern in `Code/VScode/pawpoint`.
   (`useSyncExternalStore` + a listener Set, no state library), persists to the `settings`
   table, and is hydrated once in `App.tsx`. **Adding an accent means re-running the four-way
   audit** — a passing default proves nothing about the others.
-- `src/screens/LiveScreen.tsx` — the loop. `src/screens/HistoryScreen.tsx` — past
-  conversations + delete.
+- `src/sql.ts` — the schema and the search query as plain strings, **import-free on purpose**
+  so `checks.ts` can run the real SQL against `node:sqlite`. A test that retypes a query only
+  proves the copy works.
+- `src/searchTerm.ts` — LIKE escaping. Without it a user typing `100%` matches every utterance
+  ever recorded and `_` matches any character. `sql.ts` spells the escape char out; `checks.ts`
+  asserts the two never drift apart.
+- `src/screens/LiveScreen.tsx` — the loop, plus the accent toggle in the header.
+  `src/screens/HistoryScreen.tsx` — past conversations, delete, and search across every
+  utterance (joined to the conversation it came from).
 
 ## How
 ```bash

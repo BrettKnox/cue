@@ -6,6 +6,9 @@
  */
 import * as SQLite from 'expo-sqlite';
 
+import { likePattern } from '@/searchTerm';
+import { SCHEMA, SEARCH_SQL } from '@/sql';
+
 export type Conversation = {
   id: number;
   started_at: number;
@@ -25,26 +28,7 @@ let dbp: Promise<SQLite.SQLiteDatabase> | null = null;
 function db(): Promise<SQLite.SQLiteDatabase> {
   if (!dbp) {
     dbp = SQLite.openDatabaseAsync('cue.db').then(async (d) => {
-      await d.execAsync(`
-        PRAGMA journal_mode = WAL;
-        CREATE TABLE IF NOT EXISTS conversations (
-          id INTEGER PRIMARY KEY NOT NULL,
-          started_at INTEGER NOT NULL,
-          title TEXT NOT NULL DEFAULT '',
-          summary TEXT
-        );
-        CREATE TABLE IF NOT EXISTS utterances (
-          id INTEGER PRIMARY KEY NOT NULL,
-          conversation_id INTEGER NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
-          at INTEGER NOT NULL,
-          text TEXT NOT NULL
-        );
-        CREATE INDEX IF NOT EXISTS utterances_by_conversation ON utterances(conversation_id, at);
-        CREATE TABLE IF NOT EXISTS settings (
-          key TEXT PRIMARY KEY NOT NULL,
-          value TEXT NOT NULL
-        );
-      `);
+      await d.execAsync(`PRAGMA journal_mode = WAL;` + SCHEMA);
       return d;
     });
   }
@@ -111,12 +95,13 @@ export async function removeConversation(conversationId: number): Promise<void> 
   await d.runAsync('DELETE FROM conversations WHERE id = ?', conversationId);
 }
 
-export async function search(q: string): Promise<Utterance[]> {
-  const term = q.trim();
-  if (!term) return [];
+export type Hit = Utterance & { title: string; started_at: number };
+
+/** Find utterances containing [q], newest first, with the conversation they came from. */
+export async function search(q: string): Promise<Hit[]> {
+  if (!q.trim()) return [];
   const d = await db();
-  return d.getAllAsync<Utterance>(
-    'SELECT * FROM utterances WHERE text LIKE ? ORDER BY at DESC LIMIT 100', `%${term}%`);
+  return d.getAllAsync<Hit>(SEARCH_SQL, likePattern(q));
 }
 
 /** Delete every conversation. Wired to the Settings wipe; also the test reset. */

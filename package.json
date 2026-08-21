@@ -8,7 +8,7 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
-    "check": "node src/recap.check.ts"
+    "check": "node src/checks.ts"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.2",
