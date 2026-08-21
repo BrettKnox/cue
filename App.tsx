@@ -2,12 +2,13 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { DarkTheme, DefaultTheme, NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { StatusBar } from 'expo-status-bar';
+import { useEffect } from 'react';
 import { useColorScheme } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import HistoryScreen from '@/screens/HistoryScreen';
 import LiveScreen from '@/screens/LiveScreen';
-import { type as scale, useTheme } from '@/theme';
+import { hydrateAccent, type as scale, useTheme } from '@/theme';
 
 const Tabs = createBottomTabNavigator();
 
@@ -15,6 +16,8 @@ export default function App() {
   const scheme = useColorScheme();
   const c = useTheme();
   const navTheme = scheme === 'dark' ? DarkTheme : DefaultTheme;
+
+  useEffect(() => { void hydrateAccent(); }, []);   // restore the saved accent once
 
   return (
     <SafeAreaProvider>

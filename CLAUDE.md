@@ -23,8 +23,12 @@ Matches the house pattern in `Code/VScode/pawpoint`.
 - `src/llm.ts` — one call, OpenAI-compatible, DeepSeek by default. Returns
   `{title, summary, commitments}`. `parseRecap` tolerates providers that ignore
   `response_format` and wrap the JSON in prose.
-- `src/theme.ts` — the type scale, 8dp spacing, `TAP = 48`, and **separate light/dark
-  palettes** with a real `onAccent` per mode. Components never write a raw fontSize or hex.
+- `src/theme.ts` — the type scale, 8dp spacing, `TAP = 48`, and **two accents (blue, green)
+  x two schemes**, each with its own `onAccent` role rather than a global white. Components
+  never write a raw fontSize or hex. The accent lives in a ~15-line module store
+  (`useSyncExternalStore` + a listener Set, no state library), persists to the `settings`
+  table, and is hydrated once in `App.tsx`. **Adding an accent means re-running the four-way
+  audit** — a passing default proves nothing about the others.
 - `src/screens/LiveScreen.tsx` — the loop. `src/screens/HistoryScreen.tsx` — past
   conversations + delete.
 
@@ -42,8 +46,11 @@ stores; it just says summaries are unavailable.
 ## Verifying without a device
 `npx expo export --platform web` then serve `dist/` and drive it with Playwright (the venv at
 `Code\OpsBrain\.venv` has it). This is how the layout and contrast numbers get *measured*
-rather than claimed. Measured 2026-08-21 at 390x844: Listen button 358x64, tab bar 48dp, and all
-four tab labels over 4.5:1 in both schemes (inactive 7.61 light / 8.2 dark). Zero console errors.
+rather than claimed. The audit script drives the accent toggle so it covers **all four accent x scheme
+permutations**, not just the default. Measured 2026-08-21 at 390x844, zero console errors,
+zero failures: Listen 358x64 everywhere, tab bar and accent toggle both 48dp, label-on-accent
+4.63 blue-light / 8.54 blue-dark / 5.42 green-light / 10.35 green-dark, and the inactive tab
+label (the classic offender) 7.61 light / 8.2 dark.
 Web is a **test lane only** — the product ships to phones, and speech recognition there uses the
 Web Speech API, not the native recogniser.
 

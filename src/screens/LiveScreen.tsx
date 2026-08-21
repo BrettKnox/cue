@@ -11,10 +11,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as db from '@/db';
 import * as llm from '@/llm';
 import { useTranscription } from '@/transcribe';
-import { TAP, space, type, useTheme } from '@/theme';
+import { TAP, space, type, useAccent, useCycleAccent, useTheme } from '@/theme';
 
 export default function LiveScreen() {
   const c = useTheme();
+  const [accent] = useAccent();
+  const cycleAccent = useCycleAccent();
   const insets = useSafeAreaInsets();
   const [convId, setConvId] = useState<number | null>(null);
   const [lines, setLines] = useState<string[]>([]);
@@ -83,7 +85,17 @@ export default function LiveScreen() {
   const s = styles(c);
   return (
     <View style={[s.screen, { paddingTop: insets.top + space.md }]}>
-      <Text style={s.h1} accessibilityRole="header">Cue</Text>
+      <View style={s.header}>
+        <Text style={s.h1} accessibilityRole="header">Cue</Text>
+        <Pressable
+          onPress={cycleAccent}
+          style={({ pressed }) => [s.accentBtn, pressed && s.pressed]}
+          accessibilityRole="button"
+          accessibilityLabel={`Colour: ${accent}. Tap to change.`}
+        >
+          <View style={s.accentDot} />
+        </Pressable>
+      </View>
 
       <ScrollView ref={scroller} style={s.feed} contentContainerStyle={s.feedInner}>
         {lines.length === 0 && !partial && !recap && (
@@ -145,7 +157,11 @@ export default function LiveScreen() {
 
 const styles = (c: ReturnType<typeof useTheme>) => StyleSheet.create({
   screen: { flex: 1, backgroundColor: c.bg, paddingHorizontal: space.md },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   h1: { fontSize: type.title, fontWeight: '700', color: c.text, marginBottom: space.sm },
+  accentBtn: { width: TAP, height: TAP, alignItems: 'center', justifyContent: 'center' },
+  accentDot: { width: 22, height: 22, borderRadius: 11, backgroundColor: c.accent,
+               borderWidth: 1, borderColor: c.border },
   feed: { flex: 1 },
   feedInner: { paddingBottom: space.lg, gap: space.sm },
   empty: { fontSize: type.body, lineHeight: type.body * 1.5, color: c.muted, marginTop: space.lg },

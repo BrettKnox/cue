@@ -40,11 +40,29 @@ function db(): Promise<SQLite.SQLiteDatabase> {
           text TEXT NOT NULL
         );
         CREATE INDEX IF NOT EXISTS utterances_by_conversation ON utterances(conversation_id, at);
+        CREATE TABLE IF NOT EXISTS settings (
+          key TEXT PRIMARY KEY NOT NULL,
+          value TEXT NOT NULL
+        );
       `);
       return d;
     });
   }
   return dbp;
+}
+
+/** Small key/value settings, so a preference needs no extra storage dependency. */
+export async function getSetting(key: string): Promise<string | null> {
+  const d = await db();
+  const row = await d.getFirstAsync<{ value: string }>('SELECT value FROM settings WHERE key = ?', key);
+  return row?.value ?? null;
+}
+
+export async function setSetting(key: string, value: string): Promise<void> {
+  const d = await db();
+  await d.runAsync(
+    'INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value',
+    key, value);
 }
 
 export async function startConversation(title = ''): Promise<number> {
@@ -104,5 +122,5 @@ export async function search(q: string): Promise<Utterance[]> {
 /** Delete every conversation. Wired to the Settings wipe; also the test reset. */
 export async function wipe(): Promise<void> {
   const d = await db();
-  await d.execAsync('DELETE FROM utterances; DELETE FROM conversations;');
+  await d.execAsync('DELETE FROM utterances; DELETE FROM conversations;');  // settings survive on purpose
 }
