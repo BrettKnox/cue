@@ -7,7 +7,26 @@ export type Recap = {
   summary: string;
   /** Things the user said they would do, or that were asked of them. */
   commitments: string[];
+  /** People named or addressed. Seeds the "who was this with?" chips. */
+  people: string[];
 };
+
+/** Strings only, trimmed, blanks dropped, duplicates removed case-insensitively. */
+function names(v: unknown): string[] {
+  if (!Array.isArray(v)) return [];
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const x of v) {
+    if (typeof x !== 'string') continue;
+    const t = x.trim();
+    if (!t) continue;
+    const k = t.toLowerCase();
+    if (seen.has(k)) continue;
+    seen.add(k);
+    out.push(t);
+  }
+  return out;
+}
 
 export function parseRecap(content: string): Recap {
   let raw: unknown;
@@ -23,8 +42,7 @@ export function parseRecap(content: string): Recap {
   return {
     title: typeof o.title === 'string' && o.title.trim() ? o.title.trim() : 'Conversation',
     summary: typeof o.summary === 'string' ? o.summary.trim() : '',
-    commitments: Array.isArray(o.commitments)
-      ? o.commitments.filter((c): c is string => typeof c === 'string' && c.trim().length > 0)
-      : [],
+    commitments: names(o.commitments),
+    people: names(o.people),
   };
 }

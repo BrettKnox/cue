@@ -23,6 +23,11 @@ assert.deepEqual(c.commitments, []);
 const d = parseRecap('{"title":"X","summary":"y","commitments":["real",null,42,"  ","also real"]}');
 assert.deepEqual(d.commitments, ['real', 'also real']);
 
+// people[]: same tolerance, plus dedupe so one name does not become three chips
+const e = parseRecap('{"title":"X","summary":"y","people":["Dan","dan"," Sarah ",null,"","Dan"]}');
+assert.deepEqual(e.people, ['Dan', 'Sarah']);
+assert.deepEqual(parseRecap('{"title":"X","summary":"y"}').people, []);   // absent is not a crash
+
 // genuinely unparseable input has to raise, not silently return an empty recap
 assert.throws(() => parseRecap('the model refused'), /did not return a summary/);
 

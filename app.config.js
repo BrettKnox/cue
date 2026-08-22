@@ -1,16 +1,15 @@
-// Injects the LLM backend at build time. Keeps keys out of app.json (which is committed).
+// Injects the proxy endpoint at build time. Keeps secrets out of app.json (committed).
 //
-// ponytail: whatever lands in `extra` is readable inside the shipped bundle. That is
-// acceptable for dogfooding and internal-track builds only — before a public release the
-// key moves behind a proxy and CUE_LLM_BASE_URL points at that proxy instead.
+// Whatever lands in `extra` is readable inside the shipped bundle, so ONLY the proxy URL
+// and its rotatable token go here. The OpenRouter key lives as a Cloudflare Worker secret
+// (see proxy/worker.js) and must never appear in this file or the environment it reads.
 const base = require('./app.json');
 
 module.exports = () => ({
   ...base.expo,
   extra: {
     ...(base.expo.extra ?? {}),
-    llmBaseUrl: process.env.CUE_LLM_BASE_URL ?? 'https://api.deepseek.com/v1',
-    llmModel: process.env.CUE_LLM_MODEL ?? 'deepseek-v4-flash',
-    llmApiKey: process.env.CUE_LLM_API_KEY ?? '',
+    proxyUrl: process.env.CUE_PROXY_URL ?? '',
+    proxyToken: process.env.CUE_PROXY_TOKEN ?? '',
   },
 });

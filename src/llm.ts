@@ -1,12 +1,14 @@
 /**
- * One LLM call: turn a transcript into something worth reading afterwards.
+ * The two things Cue asks a model to do: recap a finished conversation, and answer a
+ * question about one.
  *
- * OpenAI-compatible, so the backend is one env var away from DeepSeek direct,
- * OpenRouter, or a local Ollama at http://<host>:11434/v1.
+ * **No provider key is ever in this app.** Requests go to Cue's own Cloudflare Worker
+ * (`proxy/worker.js`), which holds the OpenRouter key as a secret and pins the model.
+ * The app carries only a proxy token, which can be rotated without a new build. Anything
+ * in the JS bundle is extractable from the APK, so a provider key here would be a leak.
  *
- * ponytail: the key is read from app config, which means it ships inside the bundle.
- * Fine for dogfooding, NOT fine for release — put a proxy in front (a tiny worker that
- * holds the key and forwards) before this goes on a store. That is the known ceiling.
+ * What leaves the device: transcript TEXT, and only when the user asks for a recap or an
+ * answer. Audio never leaves. Summaries can be turned off entirely in Settings.
  */
 import Constants from 'expo-constants';
 
@@ -14,47 +16,80 @@ import { type Recap, parseRecap } from '@/recap';
 
 export { type Recap, parseRecap };
 
-type Extra = { llmBaseUrl?: string; llmModel?: string; llmApiKey?: string };
+type Extra = { proxyUrl?: string; proxyToken?: string };
 const extra = (Constants.expoConfig?.extra ?? {}) as Extra;
 
-const BASE_URL = extra.llmBaseUrl ?? 'https://api.deepseek.com/v1';
-const MODEL = extra.llmModel ?? 'deepseek-v4-flash';
-const API_KEY = extra.llmApiKey ?? '';
+const PROXY_URL = extra.proxyUrl ?? '';
+const PROXY_TOKEN = extra.proxyToken ?? '';
 
-const SYSTEM =
+const RECAP_SYSTEM =
   'You summarise a conversation transcript for someone who was present but may not ' +
   'remember it. The transcript comes from live speech recognition, so it is unpunctuated ' +
   'in places and contains mishearings — infer intent, never invent facts. Reply with ' +
   'JSON only: {"title": "<4-6 words>", "summary": "<2-4 sentences, plain language>", ' +
-  '"commitments": ["<something the user agreed to do>", ...]}. Use an empty array when ' +
-  'nothing was agreed.';
+  '"commitments": ["<something the user agreed to do>", ...], ' +
+  '"people": ["<name of anyone named or addressed>", ...]}. Use empty arrays when there ' +
+  'is nothing to list. Never guess a name that was not said.';
 
+const ASK_SYSTEM =
+  'You answer questions about a conversation the user was present for, using only the ' +
+  'transcript provided. The transcript is imperfect speech recognition. If the answer is ' +
+  'not in it, say plainly that it was not said — never fill the gap. Answer in one short ' +
+  'paragraph, no preamble, no bullet lists.';
+
+/** Whether summaries and Ask can work at all. */
 export function configured(): boolean {
-  return API_KEY.length > 0;
+  return PROXY_URL.length > 0 && PROXY_TOKEN.length > 0;
+}
+
+async function complete(
+  messages: { role: string; content: string }[],
+  opts: { json?: boolean; maxTokens?: number; signal?: AbortSignal } = {},
+): Promise<string> {
+  if (!configured()) throw new Error('No summary service configured for this build.');
+
+  const res = await fetch(`${PROXY_URL}/chat/completions`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${PROXY_TOKEN}` },
+    signal: opts.signal,
+    body: JSON.stringify({
+      messages,
+      response_format: opts.json ? { type: 'json_object' } : undefined,
+      max_tokens: opts.maxTokens ?? 700,
+    }),
+  });
+
+  if (res.status === 429) throw new Error('The summary service is busy. Try again in a moment.');
+  if (!res.ok) throw new Error(`Summary failed (${res.status}).`);
+
+  const body = await res.json();
+  return body?.choices?.[0]?.message?.content ?? '';
+}
+
+/** Trim to the most recent text — the tail of a long meeting is what people ask about. */
+function clip(transcript: string, limit = 24000): string {
+  const t = transcript.trim();
+  return t.length <= limit ? t : t.slice(t.length - limit);
 }
 
 export async function recap(transcript: string, signal?: AbortSignal): Promise<Recap> {
-  const text = transcript.trim();
-  if (!text) throw new Error('Nothing was transcribed yet.');
-  if (!API_KEY) throw new Error('No LLM key configured — set extra.llmApiKey in app config.');
+  if (!transcript.trim()) throw new Error('Nothing was transcribed yet.');
+  return parseRecap(await complete(
+    [{ role: 'system', content: RECAP_SYSTEM }, { role: 'user', content: clip(transcript) }],
+    { json: true, maxTokens: 700, signal },
+  ));
+}
 
-  const res = await fetch(`${BASE_URL}/chat/completions`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${API_KEY}` },
-    signal,
-    body: JSON.stringify({
-      model: MODEL,
-      messages: [
-        { role: 'system', content: SYSTEM },
-        { role: 'user', content: text.slice(0, 24000) },
-      ],
-      response_format: { type: 'json_object' },
-      max_tokens: 700,
-    }),
-  });
-  if (!res.ok) throw new Error(`Summary failed (${res.status}). ${(await res.text()).slice(0, 200)}`);
+/** Answer one question about one conversation. */
+export async function ask(transcript: string, question: string, signal?: AbortSignal): Promise<string> {
+  const q = question.trim();
+  if (!q) throw new Error('Ask a question first.');
+  if (!transcript.trim()) throw new Error('There is no transcript to ask about.');
 
-  const body = await res.json();
-  const content: string = body?.choices?.[0]?.message?.content ?? '';
-  return parseRecap(content);
+  const answer = await complete([
+    { role: 'system', content: ASK_SYSTEM },
+    { role: 'user', content: `Transcript:\n${clip(transcript)}\n\nQuestion: ${q}` },
+  ], { maxTokens: 400, signal });
+
+  return answer.trim() || 'The model returned nothing.';
 }
