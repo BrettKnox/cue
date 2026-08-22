@@ -105,8 +105,10 @@ PROBE = r"""() => {
     const r = el.getBoundingClientRect();
     return r.width > 0 && r.height > 0 && !hidden(el) && onScreen(r);
   };
+  // Names span lines (icon glyph, then label). Collapse them or a failure line breaks apart.
   const name = (el) =>
-    (el.getAttribute('aria-label') || el.getAttribute('title') || el.innerText || '').trim();
+    (el.getAttribute('aria-label') || el.getAttribute('title') || el.innerText || '')
+      .replace(/\s+/g, ' ').trim();
 
   const interactive = [...document.querySelectorAll(
     '[role=button], [role=tab], [role=switch], [role=link], button, input, textarea, select')]

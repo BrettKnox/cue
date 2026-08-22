@@ -5,7 +5,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { View, useColorScheme } from 'react-native';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import ConversationScreen from '@/screens/ConversationScreen';
 import HistoryScreen from '@/screens/HistoryScreen';
@@ -47,28 +47,21 @@ function stack(name: string, Root: React.ComponentType, c: ReturnType<typeof use
   };
 }
 
-export default function App() {
+/**
+ * 48dp is the touch FLOOR, not a comfortable bar, and the padding below comes out of the
+ * touch target — a 58dp bar with 12dp of padding leaves a 46dp tab, which the audit
+ * rightly fails. Base must be at least 48 + the padding.
+ */
+const TAB_PAD = 6;
+const TAB_BAR_BASE = 48 + TAB_PAD * 2 + 8;   // 68: the floor, its padding, and room to breathe
+
+function Shell() {
   const scheme = useColorScheme();
   const c = useTheme();
-  const hydrated = settings.useHydrated();
-  const s = settings.useSettings();
+  const insets = useSafeAreaInsets();
   const navTheme = scheme === 'dark' ? DarkTheme : DefaultTheme;
 
-  useEffect(() => {
-    void hydrateAccent();
-    void settings.hydrate();
-  }, []);
-
-  // Wait for storage before deciding. Rendering onboarding first would flash it at
-  // returning users every cold start.
-  if (!hydrated) return <View style={{ flex: 1, backgroundColor: c.bg }} />;
-
   return (
-    <SafeAreaProvider>
-      <StatusBar style="auto" />
-      {!s.onboarded ? (
-        <OnboardingScreen />
-      ) : (
         <NavigationContainer
           theme={{
             ...navTheme,
@@ -83,8 +76,14 @@ export default function App() {
               headerShown: false,
               tabBarActiveTintColor: c.accent,
               tabBarInactiveTintColor: c.muted,   // grey-dark, not grey-light: stays over 4.5:1
-              tabBarStyle: { backgroundColor: c.bg, borderTopColor: c.border },
-              tabBarLabelStyle: { fontSize: scale.caption },
+              tabBarStyle: {
+                backgroundColor: c.bg,
+                borderTopColor: c.border,
+                height: TAB_BAR_BASE + insets.bottom,
+                paddingTop: TAB_PAD,
+                paddingBottom: insets.bottom + TAB_PAD,
+              },
+              tabBarLabelStyle: { fontSize: scale.caption, marginTop: 2 },
               tabBarIcon: ({ color, size }) => (
                 <Ionicons name={(ICONS[route.name] ?? 'ellipse-outline') as never} size={size} color={color} />
               ),
@@ -96,7 +95,28 @@ export default function App() {
             <Tabs.Screen name="Settings" component={SettingsScreen} />
           </Tabs.Navigator>
         </NavigationContainer>
-      )}
+  );
+}
+
+export default function App() {
+  const c = useTheme();
+  const hydrated = settings.useHydrated();
+  const s = settings.useSettings();
+
+  useEffect(() => {
+    void hydrateAccent();
+    void settings.hydrate();
+  }, []);
+
+  return (
+    <SafeAreaProvider>
+      <StatusBar style="auto" />
+      {/* Wait for storage before deciding, or onboarding flashes at returning users. */}
+      {!hydrated
+        ? <View style={{ flex: 1, backgroundColor: c.bg }} />
+        : !s.onboarded
+          ? <OnboardingScreen />
+          : <Shell />}
     </SafeAreaProvider>
   );
 }
