@@ -3,10 +3,11 @@ import { useCallback, useState } from 'react';
 import {
   Alert, FlatList, Pressable, StyleSheet, Text, TextInput, View,
 } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import * as db from '@/db';
+import { H1, Note, cardStyle } from '@/ui';
 import { TAP, space, type, useTheme } from '@/theme';
 
 const when = (ms: number) =>
@@ -15,6 +16,7 @@ const when = (ms: number) =>
 export default function HistoryScreen() {
   const c = useTheme();
   const insets = useSafeAreaInsets();
+  const nav = useNavigation<{ navigate: (s: string, p: object) => void }>();
   const [rows, setRows] = useState<db.Conversation[] | null>(null);
   const [query, setQuery] = useState('');
   const [hits, setHits] = useState<db.Hit[]>([]);
@@ -49,7 +51,7 @@ export default function HistoryScreen() {
 
   return (
     <View style={[s.screen, { paddingTop: insets.top + space.md }]}>
-      <Text style={s.h1} accessibilityRole="header">History</Text>
+      <H1>History</H1>
 
       <TextInput
         value={query}
@@ -68,12 +70,17 @@ export default function HistoryScreen() {
           keyExtractor={(h) => String(h.id)}
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={{ paddingBottom: insets.bottom + space.lg, gap: space.sm }}
-          ListEmptyComponent={<Text style={s.empty}>{`Nothing recorded matches “${query.trim()}”.`}</Text>}
+          ListEmptyComponent={<Note>{`Nothing recorded matches “${query.trim()}”.`}</Note>}
           renderItem={({ item }) => (
-            <View style={s.card}>
+            <Pressable
+              onPress={() => nav.navigate('Conversation', { id: item.conversation_id })}
+              accessibilityRole="button"
+              accessibilityLabel={`${item.text}. From ${item.title || 'untitled conversation'}. Tap to open.`}
+              style={({ pressed }) => [cardStyle(c), pressed && { opacity: 0.75 }]}
+            >
               <Text style={s.when}>{`${item.title || 'Untitled'} · ${when(item.at)}`}</Text>
               <Text style={s.body}>{item.text}</Text>
-            </View>
+            </Pressable>
           )}
         />
       ) : (
@@ -82,24 +89,25 @@ export default function HistoryScreen() {
           keyExtractor={(r) => String(r.id)}
           contentContainerStyle={{ paddingBottom: insets.bottom + space.lg, gap: space.sm }}
           ListEmptyComponent={
-            <Text style={s.empty}>
-              {rows === null ? 'Loading…' : 'Nothing recorded yet. Conversations you transcribe show up here.'}
-            </Text>
+            rows === null
+              ? <View style={s.skeletonWrap}>
+                  {[0, 1, 2].map((i) => <View key={i} style={s.skeleton} />)}
+                </View>
+              : <Note>Nothing recorded yet. Conversations you transcribe show up here.</Note>
           }
           renderItem={({ item }) => (
-            <View style={s.card}>
+            <Pressable
+              onPress={() => nav.navigate('Conversation', { id: item.id })}
+              onLongPress={() => confirmDelete(item)}
+              accessibilityRole="button"
+              accessibilityLabel={`${item.title || 'Untitled conversation'}, ${when(item.started_at)}`}
+              accessibilityHint="Opens the transcript. Long press to delete."
+              style={({ pressed }) => [cardStyle(c), pressed && { opacity: 0.75 }]}
+            >
               <Text style={s.when}>{when(item.started_at)}</Text>
               <Text style={s.title}>{item.title || 'Untitled conversation'}</Text>
-              {!!item.summary && <Text style={s.body}>{item.summary}</Text>}
-              <Pressable
-                onPress={() => confirmDelete(item)}
-                style={({ pressed }) => [s.delete, pressed && { opacity: 0.75 }]}
-                accessibilityRole="button"
-                accessibilityLabel={`Delete ${item.title || 'untitled conversation'}`}
-              >
-                <Text style={s.deleteText}>Delete</Text>
-              </Pressable>
-            </View>
+              {!!item.summary && <Text style={s.body} numberOfLines={3}>{item.summary}</Text>}
+            </Pressable>
           )}
         />
       )}
@@ -109,23 +117,14 @@ export default function HistoryScreen() {
 
 const styles = (c: ReturnType<typeof useTheme>) => StyleSheet.create({
   screen: { flex: 1, backgroundColor: c.bg, paddingHorizontal: space.md },
-  h1: { fontSize: type.title, fontWeight: '700', color: c.text, marginBottom: space.sm },
   search: {
     minHeight: TAP, borderRadius: 10, borderWidth: 1, borderColor: c.border,
     backgroundColor: c.surface, color: c.text, fontSize: type.body,
     paddingHorizontal: space.md, marginBottom: space.md,
   },
-  empty: { fontSize: type.body, lineHeight: type.body * 1.5, color: c.muted, marginTop: space.lg },
-  card: {
-    padding: space.md, borderRadius: 12, backgroundColor: c.surface,
-    borderWidth: 1, borderColor: c.border, gap: space.xs,
-  },
+  skeletonWrap: { gap: space.sm },
+  skeleton: { height: 92, borderRadius: 12, backgroundColor: c.surface, borderWidth: 1, borderColor: c.border },
   when: { fontSize: type.caption, color: c.muted },
   title: { fontSize: type.bodyLarge, fontWeight: '700', color: c.text },
   body: { fontSize: type.body, lineHeight: type.body * 1.5, color: c.text },
-  delete: {
-    minHeight: TAP, alignSelf: 'flex-start', justifyContent: 'center',
-    paddingHorizontal: space.sm, marginTop: space.xs,
-  },
-  deleteText: { fontSize: type.body, fontWeight: '600', color: c.danger },
 });

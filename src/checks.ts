@@ -121,3 +121,20 @@ assert.throws(() => sqlite.exec("INSERT INTO people (name, notes, created_at) VA
 console.log('people query ok');
 
 sqlite.close();
+
+// --- settings: corrupt or partial storage must never break startup ---
+import { merge, _defaults } from './settingsShape.ts';
+
+assert.deepEqual(merge('not json'), _defaults, 'corrupt settings must fall back to defaults');
+assert.deepEqual(merge('null'), _defaults);
+assert.equal(merge('{"onDeviceOnly": false}').onDeviceOnly, false);
+assert.equal(merge('{"onDeviceOnly": false}').summaries, true, 'unset keys keep their default');
+// a wrong type must not poison the value
+assert.equal(merge('{"onDeviceOnly": "yes"}').onDeviceOnly, true);
+assert.equal(merge('{"textSize": "enormous"}').textSize, 'normal');
+assert.equal(merge('{"textSize": "huge"}').textSize, 'huge');
+assert.equal(merge('{"lang": "   "}').lang, 'en-US');
+// privacy default is the safe one, and it is the default that ships
+assert.equal(_defaults.onDeviceOnly, true, 'on-device must be the DEFAULT, not an opt-in');
+
+console.log('settings ok');

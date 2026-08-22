@@ -85,6 +85,11 @@ export async function transcript(conversationId: number): Promise<string> {
   return (await utterances(conversationId)).map((u) => u.text).join(' ');
 }
 
+export async function conversation(id: number): Promise<Conversation | null> {
+  const d = await db();
+  return (await d.getFirstAsync<Conversation>('SELECT * FROM conversations WHERE id = ?', id)) ?? null;
+}
+
 export async function conversations(): Promise<Conversation[]> {
   const d = await db();
   return d.getAllAsync<Conversation>('SELECT * FROM conversations ORDER BY started_at DESC');
