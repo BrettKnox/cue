@@ -48,7 +48,9 @@ console.log('search terms ok');
 // --- the real search query against real SQLite (node:sqlite, no deps) ---
 import { DatabaseSync } from 'node:sqlite';
 
-import { SCHEMA, SEARCH_SQL } from './sql.ts';
+import {
+  CONVERSATION_PEOPLE_SQL, PEOPLE_SQL, PERSON_CONVERSATIONS_SQL, SCHEMA, SEARCH_SQL,
+} from './sql.ts';
 
 // the two files must agree on the escape character or every wildcard silently leaks
 assert.ok(SEARCH_SQL.includes(`ESCAPE '${LIKE_ESCAPE}'`), 'SEARCH_SQL escape char drifted from searchTerm');
@@ -82,5 +84,40 @@ assert.equal(find('e').length, 3);
 assert.deepEqual(find('e').map((r) => r.id), [3, 2, 1]);
 assert.equal(find('nonexistent').length, 0);
 
-sqlite.close();
 console.log('search query ok');
+
+// --- people: the real queries against real SQLite ---
+sqlite.exec("INSERT INTO conversations (id, started_at, title) VALUES (2, 2000, 'Standup')");
+sqlite.exec("INSERT INTO people (id, name, notes, created_at) VALUES (1, 'Dan', '', 1)");
+sqlite.exec("INSERT INTO people (id, name, notes, created_at) VALUES (2, 'Sarah', 'prefers texts', 1)");
+sqlite.exec("INSERT INTO people (id, name, notes, created_at) VALUES (3, 'Unlinked', '', 1)");
+sqlite.exec('INSERT INTO conversation_people VALUES (1, 1), (2, 1), (2, 2)');
+
+type P = { id: number; name: string; conversations: number; last_seen: number };
+const roster = sqlite.prepare(PEOPLE_SQL).all() as P[];
+
+// Someone never attached still has to appear, or adding a person by hand looks broken.
+assert.equal(roster.length, 3, 'a person with no conversations vanished from the roster');
+const dan = roster.find((r) => r.name === 'Dan')!;
+const alone = roster.find((r) => r.name === 'Unlinked')!;
+assert.equal(dan.conversations, 2);
+assert.equal(dan.last_seen, 2000, 'last_seen should be the NEWEST conversation, not the oldest');
+assert.equal(alone.conversations, 0, 'LEFT JOIN must count 0, not 1, for an unattached person');
+assert.equal(alone.last_seen, 0);
+// ordered by who was heard from most recently
+assert.deepEqual(roster.map((r) => r.name), ['Dan', 'Sarah', 'Unlinked']);
+
+// the two directions of the link
+assert.deepEqual((sqlite.prepare(CONVERSATION_PEOPLE_SQL).all(2) as P[]).map((r) => r.name),
+  ['Dan', 'Sarah']);
+assert.deepEqual((sqlite.prepare(PERSON_CONVERSATIONS_SQL).all(1) as { id: number }[]).map((r) => r.id),
+  [2, 1]);
+assert.equal((sqlite.prepare(PERSON_CONVERSATIONS_SQL).all(3) as unknown[]).length, 0);
+
+// name is unique case-insensitively, so "dan" and "Dan" cannot become two people
+assert.throws(() => sqlite.exec("INSERT INTO people (name, notes, created_at) VALUES ('dan', '', 1)"),
+  /UNIQUE/i, 'people.name must be UNIQUE COLLATE NOCASE');
+
+console.log('people query ok');
+
+sqlite.close();

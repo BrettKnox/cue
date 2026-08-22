@@ -7,7 +7,9 @@
 import * as SQLite from 'expo-sqlite';
 
 import { likePattern } from '@/searchTerm';
-import { SCHEMA, SEARCH_SQL } from '@/sql';
+import {
+  CONVERSATION_PEOPLE_SQL, PEOPLE_SQL, PERSON_CONVERSATIONS_SQL, SCHEMA, SEARCH_SQL,
+} from '@/sql';
 
 export type Conversation = {
   id: number;
@@ -15,6 +17,15 @@ export type Conversation = {
   title: string;
   summary: string | null;
 };
+
+export type Person = {
+  id: number;
+  name: string;
+  notes: string;
+  created_at: number;
+};
+
+export type PersonSummary = Person & { conversations: number; last_seen: number };
 
 export type Utterance = {
   id: number;
@@ -92,6 +103,7 @@ export async function setSummary(conversationId: number, summary: string, title?
 export async function removeConversation(conversationId: number): Promise<void> {
   const d = await db();
   await d.runAsync('DELETE FROM utterances WHERE conversation_id = ?', conversationId);
+  await d.runAsync('DELETE FROM conversation_people WHERE conversation_id = ?', conversationId);
   await d.runAsync('DELETE FROM conversations WHERE id = ?', conversationId);
 }
 
@@ -107,5 +119,81 @@ export async function search(q: string): Promise<Hit[]> {
 /** Delete every conversation. Wired to the Settings wipe; also the test reset. */
 export async function wipe(): Promise<void> {
   const d = await db();
-  await d.execAsync('DELETE FROM utterances; DELETE FROM conversations;');  // settings survive on purpose
+  // settings survive on purpose; people go, since they are conversation data
+  await d.execAsync(
+    'DELETE FROM utterances; DELETE FROM conversation_people; DELETE FROM conversations; DELETE FROM people;');
+}
+
+// --- people -----------------------------------------------------------------
+// A conversation is remembered by who it was with. Deleting a person never deletes a
+// conversation; the link goes, the record stays.
+
+/** Find or create by name, case-insensitively. Returns the id either way. */
+export async function personByName(name: string): Promise<number | null> {
+  const clean = name.trim();
+  if (!clean) return null;
+  const d = await db();
+  const existing = await d.getFirstAsync<{ id: number }>(
+    'SELECT id FROM people WHERE name = ? COLLATE NOCASE', clean);
+  if (existing) return existing.id;
+  const r = await d.runAsync(
+    'INSERT INTO people (name, notes, created_at) VALUES (?, ?, ?)', clean, '', Date.now());
+  return r.lastInsertRowId;
+}
+
+export async function people(): Promise<PersonSummary[]> {
+  const d = await db();
+  return d.getAllAsync<PersonSummary>(PEOPLE_SQL);
+}
+
+export async function person(id: number): Promise<Person | null> {
+  const d = await db();
+  return (await d.getFirstAsync<Person>('SELECT * FROM people WHERE id = ?', id)) ?? null;
+}
+
+export async function setPersonNotes(id: number, notes: string): Promise<void> {
+  const d = await db();
+  await d.runAsync('UPDATE people SET notes = ? WHERE id = ?', notes, id);
+}
+
+/** Idempotent: attaching the same person twice is not an error. */
+export async function linkPerson(conversationId: number, personId: number): Promise<void> {
+  const d = await db();
+  await d.runAsync(
+    'INSERT OR IGNORE INTO conversation_people (conversation_id, person_id) VALUES (?, ?)',
+    conversationId, personId);
+}
+
+export async function unlinkPerson(conversationId: number, personId: number): Promise<void> {
+  const d = await db();
+  await d.runAsync(
+    'DELETE FROM conversation_people WHERE conversation_id = ? AND person_id = ?',
+    conversationId, personId);
+}
+
+export async function peopleFor(conversationId: number): Promise<Person[]> {
+  const d = await db();
+  return d.getAllAsync<Person>(CONVERSATION_PEOPLE_SQL, conversationId);
+}
+
+export async function conversationsFor(personId: number): Promise<Conversation[]> {
+  const d = await db();
+  return d.getAllAsync<Conversation>(PERSON_CONVERSATIONS_SQL, personId);
+}
+
+/** Remove the person and every link to them. Conversations are untouched. */
+export async function removePerson(id: number): Promise<void> {
+  const d = await db();
+  await d.runAsync('DELETE FROM conversation_people WHERE person_id = ?', id);
+  await d.runAsync('DELETE FROM people WHERE id = ?', id);
+}
+
+/** Attach the names a recap found, creating anyone new. Returns how many stuck. */
+export async function attachNames(conversationId: number, names: string[]): Promise<number> {
+  let n = 0;
+  for (const name of names) {
+    const id = await personByName(name);
+    if (id != null) { await linkPerson(conversationId, id); n += 1; }
+  }
+  return n;
 }
