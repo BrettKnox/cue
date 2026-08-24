@@ -23,13 +23,17 @@ const PROXY_URL = extra.proxyUrl ?? '';
 const PROXY_TOKEN = extra.proxyToken ?? '';
 
 const RECAP_SYSTEM =
-  'You summarise a conversation transcript for someone who was present but may not ' +
+  'You summarise a conversation transcript for the person who was there but may not ' +
   'remember it. The transcript comes from live speech recognition, so it is unpunctuated ' +
-  'in places and contains mishearings — infer intent, never invent facts. Reply with ' +
-  'JSON only: {"title": "<4-6 words>", "summary": "<2-4 sentences, plain language>", ' +
-  '"commitments": ["<something the user agreed to do>", ...], ' +
+  'in places and contains mishearings — infer intent, never invent facts. ' +
+  '**Address them as "you" and never as "the user" or in the third person**: write ' +
+  '"You agreed to send the photos", not "The user agreed". Say "your mom", not "their mom". ' +
+  'Reply with JSON only: {"title": "<4-6 words, no pronouns>", ' +
+  '"summary": "<2-4 sentences, plain language, second person>", ' +
+  '"commitments": ["<something you agreed to do>", ...], ' +
   '"people": ["<name of anyone named or addressed>", ...]}. Use empty arrays when there ' +
-  'is nothing to list. Never guess a name that was not said.';
+  'is nothing to list. Never guess a name that was not said, and do not list a relationship ' +
+  'word like "mom" unless that is how they were actually addressed.';
 
 const ASK_SYSTEM =
   'You answer questions about a conversation the user was present for, using only the ' +

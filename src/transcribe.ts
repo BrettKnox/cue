@@ -173,5 +173,8 @@ export function useTranscription({
     ExpoSpeechRecognitionModule.stop();
   }, []);
 
-  return { recording, partial, error, onDevice, start, stop };
+  /** Dismiss a stale error — a recogniser hiccup should not outlive a successful recap. */
+  const clearError = useCallback(() => setError(null), []);
+
+  return { recording, partial, error, onDevice, start, stop, clearError };
 }

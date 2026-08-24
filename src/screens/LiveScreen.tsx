@@ -59,7 +59,7 @@ export default function LiveScreen() {
 
   const onLevel = useCallback((v: number) => setLevel(v), []);
 
-  const { recording, partial, error, onDevice, start, stop } = useTranscription({
+  const { recording, partial, error, onDevice, start, stop, clearError } = useTranscription({
     lang: settings.lang,
     onDeviceOnly: settings.onDeviceOnly,
     onFinal,
@@ -110,6 +110,7 @@ export default function LiveScreen() {
       await db.setSummary(id, r.summary, r.title);
       if (r.people.length) await db.attachNames(id, r.people);
       setRecap(r);
+      clearError();   // the recap landed; a mid-session recogniser hiccup is old news
       AccessibilityInfo.announceForAccessibility(`Summary ready. ${r.title}`);
     } catch (e) {
       setNote(`Saved, but the summary failed. ${(e as Error).message}`);
