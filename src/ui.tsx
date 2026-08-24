@@ -5,6 +5,7 @@
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { splitMatch } from '@/textUtils';
 import { TAP, space, type, useTheme } from '@/theme';
 
 type Palette = ReturnType<typeof useTheme>;
@@ -179,3 +180,68 @@ export function Toggle({
 export const row = StyleSheet.create({
   wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm, alignItems: 'center' },
 });
+
+/** Text with the search term picked out, so a hit is findable at a glance. */
+export function Highlight({
+  text, term, style, numberOfLines,
+}: {
+  text: string;
+  term: string;
+  style?: object;
+  numberOfLines?: number;
+}) {
+  const c = useTheme();
+  const parts = splitMatch(text, term);
+  return (
+    <Text style={style} numberOfLines={numberOfLines}>
+      {parts.map((p, i) =>
+        p.hit
+          ? <Text key={i} style={{ color: c.accent, fontWeight: '700' }}>{p.text}</Text>
+          : <Text key={i}>{p.text}</Text>)}
+    </Text>
+  );
+}
+
+/**
+ * Initials in a circle. The hue comes from the name, so a person keeps the same colour
+ * everywhere, and every swatch carries the same dark ink chosen to clear 4.5:1 against all
+ * of them — the audit checks each one, so a new swatch has to earn its place.
+ */
+const AVATARS = ['#8FD3B6', '#9BC4F5', '#E7B7A1', '#C9B6E8', '#F2C879', '#A9D6E5'] as const;
+const AVATAR_INK = '#12161C';
+
+export function initials(name: string): string {
+  const words = name.trim().split(/\s+/).filter(Boolean);
+  if (!words.length) return '?';
+  const first = [...(words[0] ?? '')][0] ?? '?';
+  const last = words.length > 1 ? [...(words[words.length - 1] ?? '')][0] ?? '' : '';
+  return (first + last).toUpperCase();
+}
+
+export function swatch(name: string): string {
+  let h = 0;
+  for (let i = 0; i < name.length; i += 1) h = (h * 31 + name.charCodeAt(i)) >>> 0;
+  return AVATARS[h % AVATARS.length]!;
+}
+
+export function Avatar({ name, size = 36 }: { name: string; size?: number }) {
+  return (
+    <View
+      importantForAccessibility="no-hide-descendants"
+      style={{
+        width: size,
+        height: size,
+        borderRadius: size / 2,
+        backgroundColor: swatch(name),
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
+      <Text style={{ fontSize: size * 0.38, fontWeight: '700', color: AVATAR_INK }}>
+        {initials(name)}
+      </Text>
+    </View>
+  );
+}
+
+export { AVATARS, AVATAR_INK };

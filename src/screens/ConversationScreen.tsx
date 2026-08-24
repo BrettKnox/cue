@@ -14,7 +14,9 @@ import * as llm from '@/llm';
 import { useSettings } from '@/settings';
 import { refreshWidget } from '@/widget/refresh';
 import { TEXT_SCALE } from '@/settingsShape';
-import { Button, Card, Chip, Note, row } from '@/ui';
+import * as Clipboard from 'expo-clipboard';
+
+import { Avatar, Button, Note, row } from '@/ui';
 import { TAP, space, type, useTheme } from '@/theme';
 
 const when = (ms: number) =>
@@ -82,10 +84,20 @@ export default function ConversationScreen() {
     }
   };
 
+  /** Everything worth pasting elsewhere, in one press. */
+  const asText = () => [conv?.title, conv?.summary, '', transcript].filter(Boolean).join('\n\n');
+
+  const [copied, setCopied] = useState(false);
+  const onCopy = async () => {
+    await Clipboard.setStringAsync(asText());
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);   // reverts the label, no toast needed
+  };
+
   const onShare = () => {
     void Share.share({
       title: conv?.title || 'Conversation',
-      message: [conv?.title, conv?.summary, '', transcript].filter(Boolean).join('\n\n'),
+      message: asText(),
     });
   };
 
@@ -126,22 +138,26 @@ export default function ConversationScreen() {
       />
 
       {!!conv.summary && (
-        <Card>
+        <View style={s.summaryCard}>
           <Text style={s.head}>Summary</Text>
           <Text style={[s.body, { fontSize: type.body * scale }]}>{conv.summary}</Text>
-        </Card>
+        </View>
       )}
 
       <View>
         <Text style={s.head}>Who was this with</Text>
         <View style={row.wrap}>
           {people.map((p) => (
-            <Chip
+            <Pressable
               key={p.id}
-              label={p.name}
-              accessibilityLabel={`${p.name}. Tap to remove from this conversation.`}
               onPress={async () => { await db.unlinkPerson(id, p.id); load(); }}
-            />
+              accessibilityRole="button"
+              accessibilityLabel={`${p.name}. Tap to remove from this conversation.`}
+              style={({ pressed }) => [s.personChip, pressed && { opacity: 0.75 }]}
+            >
+              <Avatar name={p.name} size={26} />
+              <Text style={s.personName}>{p.name}</Text>
+            </Pressable>
           ))}
           {people.length === 0 && <Note>Nobody linked yet.</Note>}
         </View>
@@ -180,10 +196,10 @@ export default function ConversationScreen() {
           </View>
         )}
         {!!answer && (
-          <Card>
+          <View style={s.answerCard}>
             <Text style={[s.body, { fontSize: type.body * scale }]}>{answer}</Text>
             <Text style={s.caveat}>Answered from this transcript only.</Text>
-          </Card>
+          </View>
         )}
         {!!err && <Note tone="danger">{err}</Note>}
       </View>
@@ -204,6 +220,7 @@ export default function ConversationScreen() {
 
       <View style={s.actions}>
         <Button label="Share" onPress={onShare} tone="quiet" />
+        <Button label={copied ? 'Copied' : 'Copy'} onPress={onCopy} tone="quiet" />
         <Pressable
           onPress={onDelete}
           accessibilityRole="button"
@@ -220,6 +237,22 @@ export default function ConversationScreen() {
 const styles = (c: ReturnType<typeof useTheme>) => StyleSheet.create({
   screen: { flex: 1, backgroundColor: c.bg, paddingHorizontal: space.md, paddingTop: space.md },
   when: { fontSize: type.caption, color: c.muted },
+  summaryCard: {
+    padding: space.md, borderRadius: 12, backgroundColor: c.surface,
+    borderWidth: 1, borderColor: c.border,
+    borderLeftWidth: 3, borderLeftColor: c.accent,   // the thing worth reading first
+    gap: space.xs,
+  },
+  answerCard: {
+    padding: space.md, borderRadius: 12, backgroundColor: c.surface,
+    borderWidth: 1, borderColor: c.border, gap: space.xs, marginTop: space.sm,
+  },
+  personChip: {
+    minHeight: TAP, flexDirection: 'row', alignItems: 'center', gap: space.sm,
+    paddingLeft: space.xs, paddingRight: space.md,
+    borderRadius: 999, borderWidth: 1, borderColor: c.border, backgroundColor: c.surface,
+  },
+  personName: { fontSize: type.body, color: c.text },
   title: {
     fontSize: type.title, fontWeight: '700', color: c.text, minHeight: TAP,
     borderBottomWidth: 1, borderColor: c.border,

@@ -22,7 +22,6 @@
     },
     "android": {
       "package": "com.wukoric.cue",
-      "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": true,
       "permissions": [
         "android.permission.RECORD_AUDIO"

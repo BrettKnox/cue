@@ -5,7 +5,8 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import * as db from '@/db';
-import { Button, H1, Note, cardStyle } from '@/ui';
+import { Avatar, Button, H1, Note, cardStyle } from '@/ui';
+import { Art } from '@/art';
 import { TAP, space, type, useTheme } from '@/theme';
 
 const ago = (ms: number) => {
@@ -61,11 +62,14 @@ export default function PeopleScreen() {
           paddingBottom: insets.bottom + space.lg, gap: space.sm, paddingTop: space.md,
         }}
         ListEmptyComponent={
-          <Note>
-            {rows === null
-              ? 'Loading…'
-              : 'Nobody yet. Cue adds people it hears named in a conversation, and you can add them here.'}
-          </Note>
+          <View style={s.emptyWrap}>
+            {rows !== null && <Art name="peopleEmpty" size={130} />}
+            <Note>
+              {rows === null
+                ? 'Loading…'
+                : 'Nobody yet. Cue adds people it hears named in a conversation, and you can add them here.'}
+            </Note>
+          </View>
         }
         renderItem={({ item }) => (
           <Pressable
@@ -74,10 +78,15 @@ export default function PeopleScreen() {
             accessibilityLabel={`${item.name}, ${item.conversations} conversations, last ${ago(item.last_seen)}`}
             style={({ pressed }) => [cardStyle(c), pressed && { opacity: 0.75 }]}
           >
-            <Text style={s.name}>{item.name}</Text>
-            <Text style={s.meta}>
+            <View style={s.rowTop}>
+              <Avatar name={item.name} />
+              <View style={{ flex: 1 }}>
+                <Text style={s.name}>{item.name}</Text>
+                <Text style={s.meta}>
               {`${item.conversations} conversation${item.conversations === 1 ? '' : 's'} · ${ago(item.last_seen)}`}
-            </Text>
+                </Text>
+              </View>
+            </View>
             {!!item.notes && <Text style={s.notes} numberOfLines={2}>{item.notes}</Text>}
           </Pressable>
         )}
@@ -93,6 +102,8 @@ const styles = (c: ReturnType<typeof useTheme>) => StyleSheet.create({
     minHeight: TAP, borderRadius: 10, borderWidth: 1, borderColor: c.border,
     backgroundColor: c.surface, color: c.text, fontSize: type.body, paddingHorizontal: space.md,
   },
+  rowTop: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
+  emptyWrap: { alignItems: 'center', gap: space.sm, marginTop: space.lg },
   name: { fontSize: type.bodyLarge, fontWeight: '700', color: c.text },
   meta: { fontSize: type.caption, color: c.muted },
   notes: { fontSize: type.body, lineHeight: type.body * 1.5, color: c.text },

@@ -1,5 +1,6 @@
 // Self-check for the recap parser: `npm run check` (node strips the types natively).
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 
 import { parseRecap } from './recap.ts';
 
@@ -229,3 +230,41 @@ assert.equal(relative(T - 25 * 3600_000, T), 'yesterday');
 assert.equal(relative(T - 3 * 86400_000, T), '3 days ago');
 
 console.log('text helpers ok');
+
+// --- avatar swatches: every one must carry the same ink at 4.5:1 ---
+// Duplicated from ui.tsx rather than imported: that module pulls in react-native, which
+// plain node cannot load. The check asserts they stay in step.
+const AVATARS = ['#8FD3B6', '#9BC4F5', '#E7B7A1', '#C9B6E8', '#F2C879', '#A9D6E5'];
+const AVATAR_INK = '#12161C';
+
+const lum = (hex: string): number => {
+  const h = hex.replace('#', '');
+  const ch = [0, 2, 4].map((i) => {
+    const v = parseInt(h.slice(i, i + 2), 16) / 255;
+    return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
+  }) as [number, number, number];
+  return 0.2126 * ch[0] + 0.7152 * ch[1] + 0.0722 * ch[2];
+};
+const ratio = (a: string, b: string): number => {
+  const [x, y] = [lum(a), lum(b)];
+  return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
+};
+
+for (const s of AVATARS) {
+  const r = ratio(AVATAR_INK, s);
+  assert.ok(r >= 4.5, `avatar swatch ${s} gives only ${r.toFixed(2)}:1 with ${AVATAR_INK}`);
+}
+assert.equal(new Set(AVATARS).size, AVATARS.length, 'duplicate avatar swatch');
+
+// the ui.tsx copy must not drift from the one asserted here
+{
+  // `npm run check` runs from the package root. Plain path: the DOM `URL` type that
+  // expo/tsconfig.base pulls in is not node's, and converting between them is not worth it.
+  const src = readFileSync('src/ui.tsx', 'utf8');
+  for (const s of AVATARS) {
+    assert.ok(src.includes(s), `${s} is asserted here but missing from ui.tsx`);
+  }
+  assert.ok(src.includes(AVATAR_INK), 'AVATAR_INK drifted from ui.tsx');
+}
+
+console.log('avatar contrast ok');

@@ -5,7 +5,7 @@ import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/nativ
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import * as db from '@/db';
-import { Note, cardStyle } from '@/ui';
+import { Avatar, Note, cardStyle } from '@/ui';
 import { TAP, space, type, useTheme } from '@/theme';
 
 const when = (ms: number) =>
@@ -57,7 +57,10 @@ export default function PersonScreen() {
       contentContainerStyle={{ paddingBottom: insets.bottom + space.xl, gap: space.md }}
       keyboardShouldPersistTaps="handled"
     >
-      <Text style={s.name} accessibilityRole="header">{p.name}</Text>
+      <View style={s.header}>
+        <Avatar name={p.name} size={52} />
+        <Text style={s.name} accessibilityRole="header">{p.name}</Text>
+      </View>
 
       <View>
         <Text style={s.head}>Notes</Text>
@@ -106,7 +109,8 @@ export default function PersonScreen() {
 
 const styles = (c: ReturnType<typeof useTheme>) => StyleSheet.create({
   screen: { flex: 1, backgroundColor: c.bg, paddingHorizontal: space.md, paddingTop: space.md },
-  name: { fontSize: type.display, fontWeight: '700', color: c.text },
+  header: { flexDirection: 'row', alignItems: 'center', gap: space.md },
+  name: { fontSize: type.display, fontWeight: '700', color: c.text, flex: 1 },
   head: { fontSize: type.caption, fontWeight: '700', color: c.muted, marginBottom: space.xs },
   notes: {
     minHeight: TAP * 2, borderRadius: 10, borderWidth: 1, borderColor: c.border,

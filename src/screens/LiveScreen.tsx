@@ -17,6 +17,7 @@ import { refreshWidget } from '@/widget/refresh';
 import { useSettings } from '@/settings';
 import { TEXT_SCALE } from '@/settingsShape';
 import { useTranscription } from '@/transcribe';
+import { Art } from '@/art';
 import { Button, Card, Note } from '@/ui';
 import { TAP, space, type, useTheme } from '@/theme';
 
@@ -205,10 +206,13 @@ export default function LiveScreen() {
 
       <ScrollView ref={scroller} style={s.feed} contentContainerStyle={s.feedInner}>
         {lines.length === 0 && !partial && !recap && (
-          <Note>
-            Tap Listen and Cue writes down the conversation as it happens. When you stop, it
-            tells you what was said and what you agreed to.
-          </Note>
+          <View style={s.emptyWrap}>
+            <Art name="liveEmpty" size={140} />
+            <Note>
+              Tap Listen and Cue writes down the conversation as it happens. When you stop, it
+              tells you what was said and what you agreed to.
+            </Note>
+          </View>
         )}
         {lines.map((line, i) => (
           <Text key={i} style={[s.line, { fontSize: type.bodyLarge * scale }]}>{line}</Text>
@@ -218,7 +222,7 @@ export default function LiveScreen() {
         )}
 
         {recap && (
-          <Card>
+          <View style={s.recapCard}>
             <Text style={s.cardTitle}>{recap.title}</Text>
             <Text style={[s.cardBody, { fontSize: type.body * scale }]}>{recap.summary}</Text>
             {recap.commitments.length > 0 && (
@@ -232,7 +236,7 @@ export default function LiveScreen() {
             {recap.people.length > 0 && (
               <Text style={s.cardMeta}>{`With ${recap.people.join(', ')} · saved to History`}</Text>
             )}
-          </Card>
+          </View>
         )}
       </ScrollView>
 
@@ -274,6 +278,13 @@ const styles = (c: ReturnType<typeof useTheme>) => StyleSheet.create({
   timer: { fontSize: type.body, fontWeight: '700', color: c.text, fontVariant: ['tabular-nums'] },
   meterTrack: { flex: 1, height: 6, borderRadius: 3, backgroundColor: c.surface, overflow: 'hidden' },
   meterFill: { height: 6, borderRadius: 3, backgroundColor: c.accent },
+  emptyWrap: { alignItems: 'center', gap: space.sm, marginTop: space.lg },
+  recapCard: {
+    marginTop: space.md, padding: space.md, borderRadius: 12,
+    backgroundColor: c.surface, borderWidth: 1, borderColor: c.border,
+    borderLeftWidth: 3, borderLeftColor: c.accent,
+    gap: space.xs,
+  },
   feed: { flex: 1 },
   feedInner: { paddingBottom: space.lg, gap: space.sm },
   line: { lineHeight: type.bodyLarge * 1.45, color: c.text },

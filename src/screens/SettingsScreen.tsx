@@ -6,6 +6,7 @@ import { ExpoSpeechRecognitionModule } from 'expo-speech-recognition';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import * as db from '@/db';
+import { Art } from '@/art';
 import * as settings from '@/settings';
 import { refreshWidget } from '@/widget/refresh';
 import { ON_DEVICE_PACKAGE } from '@/transcribe';
@@ -130,9 +131,10 @@ export default function SettingsScreen() {
         <Text style={st.head}>Your data</Text>
         <Button label="Delete everything" onPress={wipe} tone="quiet" hint="Removes every conversation from this device" />
         <Button label="Privacy policy" onPress={() => void Linking.openURL(PRIVACY_URL)} tone="quiet" />
-        <Text style={st.version}>
-          {`Cue ${Constants.expoConfig?.version ?? ''}`}
-        </Text>
+        <View style={{ alignItems: 'center', marginTop: space.md }}>
+          <Art name="flourish" size={120} />
+          <Text style={st.version}>{`Cue ${Constants.expoConfig?.version ?? ''}`}</Text>
+        </View>
       </View>
     </ScrollView>
   );
