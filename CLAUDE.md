@@ -74,6 +74,14 @@ large scope set), so use an **account API token** in `CLOUDFLARE_API_TOKEN` inst
 against `/accounts/{id}/workers/scripts` instead. And the account needs a registered
 `workers.dev` subdomain before the first deploy; ours is `wukoric`.
 
+**Config changes need a REBUILD, not a dev-server restart.** Cue has no `expo-updates`, so
+`Constants.expoConfig` is read from `assets/app.config` **embedded in the APK at build time**,
+not from metro's manifest. Editing `app.config.js` or `.env` and restarting `expo start` looks
+like it should work and silently does not — the app keeps the values it was built with. This
+cost a debugging round: the proxy was live and the manifest served the right values while the
+app still reported "No summary service is set up for this build". Verify with
+`unzip -p android/app/build/outputs/apk/debug/app-debug.apk assets/app.config`.
+
 ## Verifying
 `python tools/audit.py` builds the web export and drives it across **3 widths x 2 schemes
 x 2 accents x every screen — 54 states**, asserting 48dp targets, 4.5:1 contrast against
