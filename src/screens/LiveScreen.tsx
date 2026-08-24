@@ -34,7 +34,7 @@ export default function LiveScreen() {
   const [convId, setConvId] = useState<number | null>(null);
   const [lines, setLines] = useState<string[]>([]);
   const [recap, setRecap] = useState<llm.Recap | null>(null);
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusy] = useState<string | null>(null);   // the label, so it never lies
   const [note, setNote] = useState<string | null>(null);
   const [elapsed, setElapsed] = useState(0);
   const [level, setLevel] = useState(0);
@@ -104,7 +104,7 @@ export default function LiveScreen() {
   };
 
   const runRecap = async (id: number, text: string) => {
-    setBusy(true);
+    setBusy('Writing the recap…');
     try {
       const r = await llm.recap(text);
       await db.setSummary(id, r.summary, r.title);
@@ -115,26 +115,36 @@ export default function LiveScreen() {
     } catch (e) {
       setNote(`Saved, but the summary failed. ${(e as Error).message}`);
     } finally {
-      setBusy(false);
+      setBusy(null);
     }
   };
 
   const end = async () => {
-    stop();
     buzz([0, 30, 60, 30]);
     AccessibilityInfo.announceForAccessibility('Stopped listening');
+    setBusy('Finishing the last sentence…');   // truthful: not summarising yet
+    await stop();                        // waits for the last phrase to be finalised and stored
     const id = convRef.current;
-    if (id == null) return;
+    if (id == null) { setBusy(null); return; }
 
     const text = await db.transcript(id);
     if (!text) {
       await db.removeConversation(id);
       setConvId(null);
+      setBusy(null);
       setNote('Nothing was picked up. Check the microphone and try again.');
       return;
     }
-    if (!settings.summaries) { setNote('Saved. Summaries are off, so nothing was sent.'); return; }
-    if (!llm.configured()) { setNote('Saved. No summary service is set up for this build.'); return; }
+    if (!settings.summaries) {
+      setBusy(null);
+      setNote('Saved. Summaries are off, so nothing was sent.');
+      return;
+    }
+    if (!llm.configured()) {
+      setBusy(null);
+      setNote('Saved. No summary service is set up for this build.');
+      return;
+    }
     await runRecap(id, text);
   };
 
@@ -211,9 +221,9 @@ export default function LiveScreen() {
 
       <View style={[s.bar, { paddingBottom: insets.bottom + space.md }]}>
         {busy ? (
-          <View style={s.busy}>
+          <View style={s.busy} accessibilityLiveRegion="polite">
             <ActivityIndicator color={c.accent} />
-            <Note>Writing the recap…</Note>
+            <Note>{busy}</Note>
           </View>
         ) : (
           <View style={{ gap: space.sm }}>

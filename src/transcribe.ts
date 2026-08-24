@@ -40,6 +40,10 @@ export type TranscribeOptions = {
 // the physical world (mic drivers, recogniser services) needs a knob here.
 const RESTART_DELAY_MS = 300;
 
+// How long to let the recogniser finalise the phrase in progress after Stop. Long enough
+// for it to deliver, short enough that Stop still feels immediate.
+const FINALISE_GRACE_MS = 1200;
+
 const androidOnly = <T,>(v: T): T | undefined => (Platform.OS === 'android' ? v : undefined);
 
 
@@ -63,6 +67,10 @@ export function useTranscription({
   levelCb.current = onLevel;
   const onDeviceRef = useRef<boolean>(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** The last interim text. Kept in a ref so stop() can rescue it. */
+  const partialRef = useRef('');
+  /** Resolves when the recogniser confirms it has ended. */
+  const ended = useRef<(() => void) | null>(null);
 
   /** Can this device run [lang] offline right now? */
   const probe = useCallback(async (): Promise<boolean> => {
@@ -128,10 +136,32 @@ export function useTranscription({
     return true;
   }, [begin, lang, onDeviceOnly, probe]);
 
-  const stop = useCallback(() => {
+  /**
+   * Stopping is not instant. The recogniser is usually mid-phrase, and that text is only an
+   * INTERIM result — killing the session throws it away, so the last thing said before the
+   * user tapped Stop silently vanished from the transcript.
+   *
+   * So: ask it to stop, give it a moment to finalise what it was holding, and if it never
+   * does, save the interim text ourselves. Awaited, so the recap does not read the database
+   * before the last sentence has landed in it.
+   */
+  const stop = useCallback(async () => {
     wanted.current = false;              // set BEFORE stopping, or `end` restarts us
     if (timer.current) clearTimeout(timer.current);
+
+    const finished = new Promise<void>((resolve) => { ended.current = resolve; });
     ExpoSpeechRecognitionModule.stop();
+    await Promise.race([
+      finished,
+      new Promise<void>((resolve) => setTimeout(resolve, FINALISE_GRACE_MS)),
+    ]);
+    ended.current = null;
+
+    const tail = partialRef.current.trim();
+    if (tail) {                          // never finalised — keep it rather than lose it
+      partialRef.current = '';
+      finalCb.current?.(tail);
+    }
     setRecording(false);
     setPartial('');
   }, []);
@@ -139,15 +169,20 @@ export function useTranscription({
   useSpeechRecognitionEvent('result', (e) => {
     const text = e.results?.[0]?.transcript ?? '';
     if (e.isFinal) {
+      partialRef.current = '';
       setPartial('');
       if (text.trim()) finalCb.current?.(text);
     } else {
+      partialRef.current = text;
       setPartial(text);
     }
   });
 
   useSpeechRecognitionEvent('end', () => {
-    if (!wanted.current) return;         // a real stop, leave it stopped
+    if (!wanted.current) {               // a real stop — let stop() proceed
+      ended.current?.();
+      return;
+    }
     timer.current = setTimeout(begin, RESTART_DELAY_MS);
   });
 
