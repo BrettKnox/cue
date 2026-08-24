@@ -53,7 +53,9 @@ def main() -> int:
         return 2
 
     w, h = size()
-    tab_y = int(h * 0.965)                    # the tab bar sits at the very bottom
+    # 0.965 lands on the SYSTEM navigation bar, not the app's tab bar — that opened the
+    # recents switcher and captured the user's other apps. The tab bar sits above it.
+    tab_y = int(h * 0.910)
 
     if "--dark" in sys.argv:
         adb("shell", "cmd", "uimode", "night", "yes")

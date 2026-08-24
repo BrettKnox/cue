@@ -19,6 +19,10 @@ import {
   useSpeechRecognitionEvent,
 } from 'expo-speech-recognition';
 
+import { humanError } from '@/speechError';
+
+export { humanError };
+
 /** Google's on-device recogniser. The default service is the cloud one. */
 export const ON_DEVICE_PACKAGE = 'com.google.android.as';
 
@@ -37,6 +41,7 @@ export type TranscribeOptions = {
 const RESTART_DELAY_MS = 300;
 
 const androidOnly = <T,>(v: T): T | undefined => (Platform.OS === 'android' ? v : undefined);
+
 
 export function useTranscription({
   lang = 'en-US',
@@ -151,10 +156,12 @@ export function useTranscription({
   });
 
   useSpeechRecognitionEvent('error', (e) => {
-    // "no-speech" fires constantly in a quiet room; it is not a failure worth showing.
-    if (e.error === 'no-speech') return;
-    setError(e.message || e.error);
-    if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
+    const friendly = humanError(e.error, e.message);
+    if (friendly === null) return;      // expected noise, not something to show anyone
+    setError(friendly);
+    // Only stop for the errors that will not fix themselves; the rest auto-restart.
+    if (e.error === 'not-allowed' || e.error === 'service-not-allowed'
+        || e.error === 'audio-capture' || e.error === 'language-not-supported') {
       wanted.current = false;
       setRecording(false);
     }

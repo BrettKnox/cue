@@ -138,3 +138,28 @@ assert.equal(merge('{"lang": "   "}').lang, 'en-US');
 assert.equal(_defaults.onDeviceOnly, true, 'on-device must be the DEFAULT, not an opt-in');
 
 console.log('settings ok');
+
+// --- speech errors: never show a raw platform string to a user ---
+import { humanError } from './speechError.ts';
+
+// The two that are normal operation, not failures worth interrupting anyone over.
+assert.equal(humanError('no-speech'), null, 'no-speech fires constantly in a quiet room');
+assert.equal(humanError('aborted'), null);
+
+// Every other code must produce something actionable, and never echo the platform text.
+for (const code of ['not-allowed', 'service-not-allowed', 'audio-capture', 'network',
+                    'language-not-supported', 'busy', 'client', 'error_2', 'total-nonsense']) {
+  const msg = humanError(code, 'Other client side errors');
+  assert.ok(msg, `${code} produced no message`);
+  assert.ok(!msg.includes('Other client side errors'),
+    `${code} leaked the raw platform string to the user`);
+  assert.ok(/[.!]$/.test(msg), `${code} message is not a sentence: ${msg}`);
+  assert.ok(msg.length > 20, `${code} message is too terse to act on: ${msg}`);
+}
+
+// the permission case has to point somewhere useful
+assert.match(humanError('not-allowed')!, /permission/i);
+// the on-device promise shows up in the network case
+assert.match(humanError('network')!, /on-device/i);
+
+console.log('speech errors ok');
