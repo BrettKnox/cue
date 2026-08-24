@@ -57,9 +57,22 @@ npm run typecheck
 npx expo run:android
 ```
 The proxy endpoint is injected by `app.config.js` from `CUE_PROXY_URL` and
-`CUE_PROXY_TOKEN`. Nothing secret is committed, and **the OpenRouter key must never appear
-in the app or its environment** — it lives only as a Worker secret. With no proxy set the
-app still transcribes, stores and searches; it just says summaries are unavailable.
+`CUE_PROXY_TOKEN`, which live in a **gitignored `.env`** that Expo loads at bundle time.
+Nothing secret is committed, and **the OpenRouter key must never appear in the app or its
+environment** — it lives only as a Worker secret. With no proxy set the app still
+transcribes, stores and searches; it just says summaries are unavailable.
+
+**Deployed proxy:** `https://cue-llm-proxy.wukoric.workers.dev` (live 2026-08-22). Verified:
+no token/wrong token 401, wrong path 404, bad body 400, GET 405, and a real recap round-trips
+in ~5.6 s for ~$0.00013 on `deepseek/deepseek-v4-flash`.
+
+Deploying it again, or from another machine, hits three things worth knowing:
+`wrangler login` OAuth failed with `request_forbidden` on this account (it asks for a very
+large scope set), so use an **account API token** in `CLOUDFLARE_API_TOKEN` instead — the
+"Edit Cloudflare Workers" template is enough. Such a token returns 401 from
+`/user/tokens/verify` (that endpoint is user-tokens only) while working perfectly, so test it
+against `/accounts/{id}/workers/scripts` instead. And the account needs a registered
+`workers.dev` subdomain before the first deploy; ours is `wukoric`.
 
 ## Verifying
 `python tools/audit.py` builds the web export and drives it across **3 widths x 2 schemes
