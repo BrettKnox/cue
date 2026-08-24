@@ -1,10 +1,14 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { DarkTheme, DefaultTheme, NavigationContainer } from '@react-navigation/native';
+import {
+  DarkTheme, DefaultTheme, NavigationContainer,
+  type LinkingOptions, type NavigatorScreenParams,
+} from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
-import { View, useColorScheme } from 'react-native';
+import { Linking, View, useColorScheme } from 'react-native';
+import * as QuickActions from 'expo-quick-actions';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import ConversationScreen from '@/screens/ConversationScreen';
@@ -14,6 +18,7 @@ import OnboardingScreen from '@/screens/OnboardingScreen';
 import PeopleScreen from '@/screens/PeopleScreen';
 import PersonScreen from '@/screens/PersonScreen';
 import SettingsScreen from '@/screens/SettingsScreen';
+import { noteUrl } from '@/intent';
 import * as settings from '@/settings';
 import { hydrateAccent, type as scale, useTheme } from '@/theme';
 
@@ -55,6 +60,36 @@ function stack(name: string, Root: React.ComponentType, c: ReturnType<typeof use
 const TAB_PAD = 6;
 const TAB_BAR_BASE = 48 + TAB_PAD * 2 + 8;   // 68: the floor, its padding, and room to breathe
 
+/** Both detail screens are reachable from either tab's stack. */
+type DetailStack = {
+  Conversation: { id: number };
+  Person: { id: number };
+};
+type RootTabs = {
+  Live: undefined;
+  History: NavigatorScreenParams<DetailStack & { HistoryHome: undefined }>;
+  People: NavigatorScreenParams<DetailStack & { PeopleHome: undefined }>;
+  Settings: undefined;
+};
+
+/**
+ * Navigation for deep links. The side effect a URL cannot express — "and start recording" —
+ * is carried separately by the intent store, consumed once by the screen that owns it.
+ */
+const linking: LinkingOptions<RootTabs> = {
+  prefixes: ['cue://'],
+  config: {
+    screens: {
+      Live: 'listen',
+      History: {
+        screens: { HistoryHome: 'search', Conversation: 'conversation/:id', Person: 'person/:id' },
+      },
+      People: { screens: { PeopleHome: 'people' } },
+      Settings: 'settings',
+    },
+  },
+};
+
 function Shell() {
   const scheme = useColorScheme();
   const c = useTheme();
@@ -63,6 +98,7 @@ function Shell() {
 
   return (
         <NavigationContainer
+          linking={linking}
           theme={{
             ...navTheme,
             colors: {
@@ -106,6 +142,21 @@ export default function App() {
   useEffect(() => {
     void hydrateAccent();
     void settings.hydrate();
+    // Cold start (widget / deep link) and every warm tap while running.
+    void Linking.getInitialURL().then(noteUrl);
+    const urlSub = Linking.addEventListener('url', (e) => noteUrl(e.url));
+
+    // Long-press the launcher icon. Both routes funnel into the same intent store, so
+    // "start recording" has exactly one implementation.
+    void QuickActions.setItems([
+      { id: 'listen', title: 'Start listening', icon: 'listen_icon',
+        params: { href: 'cue://listen' } },
+      { id: 'search', title: 'Search', icon: 'search', params: { href: 'cue://search' } },
+    ]).catch(() => {});                       // unsupported launchers must not crash startup
+    noteUrl(QuickActions.initial?.params?.href as string | undefined);
+    const actionSub = QuickActions.addListener((a) => noteUrl(a.params?.href as string | undefined));
+
+    return () => { urlSub.remove(); actionSub.remove(); };
   }, []);
 
   return (

@@ -42,6 +42,36 @@
             "com.google.android.googlequicksearchbox"
           ]
         }
+      ],
+      [
+        "expo-quick-actions",
+        {
+          "androidIcons": {
+            "listen_icon": {
+              "foregroundImage": "./assets/adaptive-icon.png",
+              "backgroundColor": "#1F6FEB"
+            }
+          }
+        }
+      ],
+      [
+        "react-native-android-widget",
+        {
+          "widgets": [
+            {
+              "name": "Cue",
+              "label": "Cue \u2014 Listen",
+              "description": "One tap to start transcribing, and what Cue heard last.",
+              "minWidth": "180dp",
+              "minHeight": "110dp",
+              "targetCellWidth": 4,
+              "targetCellHeight": 2,
+              "resizeMode": "horizontal|vertical",
+              "previewImage": "./assets/icon.png",
+              "updatePeriodMillis": 1800000
+            }
+          ]
+        }
       ]
     ],
     "icon": "./assets/icon.png",

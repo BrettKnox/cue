@@ -118,6 +118,18 @@ def main() -> int:
         require_cue(f"after tapping {name}")          # the tap must not have left the app
         shots.append(shoot(f"{i}-{name}"))
 
+    # The detail screen — summary, commitments, people, Ask — is the most compelling one
+    # and is only reachable by opening a conversation from History.
+    adb("shell", "input", "tap", str(int(w * TABS["history"])), str(y))
+    time.sleep(1.8)
+    require_cue("returning to History")
+    adb("shell", "input", "tap", str(w // 2), str(int(h * 0.22)))   # the newest card
+    time.sleep(2.5)
+    require_cue("opening a conversation")
+    shots.append(shoot("5-conversation"))
+    adb("shell", "input", "keyevent", "KEYCODE_BACK")
+    time.sleep(1.2)
+
     sizes = {p.stat().st_size for p in shots}
     for p in shots:
         print("  captured", p.name, p.stat().st_size, "bytes")

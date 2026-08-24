@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import * as db from '@/db';
 import * as settings from '@/settings';
+import { refreshWidget } from '@/widget/refresh';
 import { ON_DEVICE_PACKAGE } from '@/transcribe';
 import { Button, Chip, H1, Note, Toggle, row } from '@/ui';
 import { ACCENT_NAMES, useAccent } from '@/theme';
@@ -41,6 +42,7 @@ export default function SettingsScreen() {
           style: 'destructive',
           onPress: async () => {
             await db.wipe();
+            void refreshWidget();      // the widget must not still show a deleted conversation
             Alert.alert('Deleted', 'Everything Cue had recorded is gone.');
           },
         },

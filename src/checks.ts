@@ -163,3 +163,69 @@ assert.match(humanError('not-allowed')!, /permission/i);
 assert.match(humanError('network')!, /on-device/i);
 
 console.log('speech errors ok');
+
+// --- launcher intents: only an explicit cue://listen may switch the microphone on ---
+import { parseIntent } from './intentUrl.ts';
+
+assert.equal(parseIntent('cue://listen'), 'listen');
+assert.equal(parseIntent('cue://search'), 'search');
+assert.equal(parseIntent('cue://listen/'), 'listen');        // trailing slash
+assert.equal(parseIntent('cue://LISTEN'), 'listen');         // case
+assert.equal(parseIntent('cue://listen?from=widget'), 'listen');
+
+// Anything that is not exactly that path must NOT start a recording.
+assert.equal(parseIntent(null), null);
+assert.equal(parseIntent(''), null);
+assert.equal(parseIntent('cue://'), null);                   // a plain launch
+assert.equal(parseIntent('cue://settings'), null);
+assert.equal(parseIntent('cue://conversation/12'), null);
+assert.equal(parseIntent('cue://conversation/12?q=listen'), null,
+  'a query containing "listen" must not arm the microphone');
+assert.equal(parseIntent('cue://listening'), null, 'a longer path must not match');
+assert.equal(parseIntent('https://example.com/listen'), null, 'a web URL is not our intent');
+
+console.log('launcher intents ok');
+
+// --- text helpers ---
+import { relative, splitMatch, titleFrom } from './textUtils.ts';
+
+// titleFrom: the fallback that stops History being a wall of "Untitled conversation"
+assert.equal(titleFrom(''), '');
+assert.equal(titleFrom('   '), '');
+assert.equal(titleFrom('short one'), 'short one');            // under the limit, no ellipsis
+assert.equal(titleFrom('one two three four five six'), 'one two three four five six');
+assert.equal(titleFrom('one two three four five six seven'), 'one two three four five six…');
+assert.equal(titleFrom('  ragged   spacing   here  '), 'ragged spacing here');
+// trailing punctuation immediately before an ellipsis reads as a typo
+assert.equal(titleFrom('so about the roof, Dan said the quote'), 'so about the roof, Dan said…');
+assert.ok(!titleFrom('a b c d e f g').includes(' …'), 'no space before the ellipsis');
+
+// splitMatch: highlighting must treat the term literally, exactly as the SQL escaping does
+assert.deepEqual(splitMatch('the deposit is due', 'deposit'), [
+  { text: 'the ', hit: false }, { text: 'deposit', hit: true }, { text: ' is due', hit: false },
+]);
+assert.equal(splitMatch('Roof roof ROOF', 'roof').filter((x) => x.hit).length, 3);
+assert.deepEqual(splitMatch('abc', ''), [{ text: 'abc', hit: false }]);   // empty term
+assert.deepEqual(splitMatch('', 'x'), [{ text: '', hit: false }]);
+assert.equal(splitMatch('start here', 'start')[0]!.hit, true);            // match at index 0
+assert.equal(splitMatch('end here', 'here').at(-1)!.hit, true);           // match at the end
+// a regex-special term must match literally, not throw and not match everything
+assert.equal(splitMatch('a.b and axb', 'a.b').filter((x) => x.hit).length, 1);
+assert.equal(splitMatch('100% sure', '100%').filter((x) => x.hit).length, 1);
+// the pieces must always reassemble into the original text
+for (const [text, term] of [['the deposit is due', 'e'], ['aaa', 'aa'], ['xyz', 'q']] as const) {
+  assert.equal(splitMatch(text, term).map((p) => p.text).join(''), text,
+    `splitMatch lost or duplicated text for "${term}"`);
+}
+
+// relative: clock skew must never print a negative age
+const T = 1_700_000_000_000;
+assert.equal(relative(T, T), 'just now');
+assert.equal(relative(T + 60_000, T), 'just now', 'a future timestamp must not read "-1 min ago"');
+assert.equal(relative(T - 5 * 60_000, T), '5 min ago');
+assert.equal(relative(T - 60 * 60_000, T), '1 hour ago');
+assert.equal(relative(T - 3 * 3600_000, T), '3 hours ago');
+assert.equal(relative(T - 25 * 3600_000, T), 'yesterday');
+assert.equal(relative(T - 3 * 86400_000, T), '3 days ago');
+
+console.log('text helpers ok');

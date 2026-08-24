@@ -12,6 +12,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as db from '@/db';
 import * as llm from '@/llm';
 import { useSettings } from '@/settings';
+import { refreshWidget } from '@/widget/refresh';
 import { TEXT_SCALE } from '@/settingsShape';
 import { Button, Card, Chip, Note, row } from '@/ui';
 import { TAP, space, type, useTheme } from '@/theme';
@@ -51,6 +52,7 @@ export default function ConversationScreen() {
   const saveTitle = async () => {
     if (!conv || title === conv.title) return;
     await db.setSummary(id, conv.summary ?? '', title.trim());
+    void refreshWidget();
     load();
   };
 
@@ -93,7 +95,11 @@ export default function ConversationScreen() {
       {
         text: 'Delete',
         style: 'destructive',
-        onPress: async () => { await db.removeConversation(id); nav.goBack(); },
+        onPress: async () => {
+          await db.removeConversation(id);
+          void refreshWidget();
+          nav.goBack();
+        },
       },
     ]);
   };

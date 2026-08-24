@@ -1,5 +1,5 @@
 /** Past conversations, and a way to find the thing that was said. */
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Alert, FlatList, Pressable, StyleSheet, Text, TextInput, View,
 } from 'react-native';
@@ -7,6 +7,7 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import * as db from '@/db';
+import { takeIntent, usePendingIntent } from '@/intent';
 import { H1, Note, cardStyle } from '@/ui';
 import { TAP, space, type, useTheme } from '@/theme';
 
@@ -20,6 +21,12 @@ export default function HistoryScreen() {
   const [rows, setRows] = useState<db.Conversation[] | null>(null);
   const [query, setQuery] = useState('');
   const [hits, setHits] = useState<db.Hit[]>([]);
+
+  const searchRef = useRef<TextInput>(null);
+  const intent = usePendingIntent();
+  useEffect(() => {
+    if (intent === 'search' && takeIntent('search')) searchRef.current?.focus();
+  }, [intent]);
 
   const load = useCallback(() => { void db.conversations().then(setRows); }, []);
   useFocusEffect(load);   // re-read on every visit; a recording may have just ended
@@ -54,6 +61,7 @@ export default function HistoryScreen() {
       <H1>History</H1>
 
       <TextInput
+        ref={searchRef}
         value={query}
         onChangeText={onQuery}
         placeholder="Search what was said"

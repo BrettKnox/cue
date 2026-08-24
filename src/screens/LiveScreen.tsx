@@ -11,6 +11,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import * as db from '@/db';
 import * as llm from '@/llm';
+import { takeIntent, usePendingIntent } from '@/intent';
+import { titleFrom } from '@/textUtils';
+import { refreshWidget } from '@/widget/refresh';
 import { useSettings } from '@/settings';
 import { TEXT_SCALE } from '@/settingsShape';
 import { useTranscription } from '@/transcribe';
@@ -110,9 +113,14 @@ export default function LiveScreen() {
       await db.setSummary(id, r.summary, r.title);
       if (r.people.length) await db.attachNames(id, r.people);
       setRecap(r);
+      void refreshWidget();
       clearError();   // the recap landed; a mid-session recogniser hiccup is old news
       AccessibilityInfo.announceForAccessibility(`Summary ready. ${r.title}`);
     } catch (e) {
+      // No summary, so give it a readable name from its own first words rather than
+      // leaving another "Untitled conversation" behind.
+      await db.setSummary(id, '', titleFrom(text));
+      void refreshWidget();
       setNote(`Saved, but the summary failed. ${(e as Error).message}`);
     } finally {
       setBusy(null);
@@ -136,11 +144,15 @@ export default function LiveScreen() {
       return;
     }
     if (!settings.summaries) {
+      await db.setSummary(id, '', titleFrom(text));
+      void refreshWidget();
       setBusy(null);
       setNote('Saved. Summaries are off, so nothing was sent.');
       return;
     }
     if (!llm.configured()) {
+      await db.setSummary(id, '', titleFrom(text));
+      void refreshWidget();
       setBusy(null);
       setNote('Saved. No summary service is set up for this build.');
       return;
@@ -154,6 +166,14 @@ export default function LiveScreen() {
     setNote(null);
     await runRecap(id, await db.transcript(id));
   };
+
+  // A launcher shortcut or widget tap asked to record. Consume it once: the tap itself is
+  // the consent, but a re-focus or a normal tab tap must never switch the mic on.
+  const intent = usePendingIntent();
+  useEffect(() => {
+    if (intent !== 'listen' || recording || busy) return;
+    if (takeIntent('listen')) void begin();
+  }, [intent, recording, busy]);   // eslint-disable-line react-hooks/exhaustive-deps
 
   const scale = TEXT_SCALE[settings.textSize];
   const s = styles(c);
