@@ -18,6 +18,7 @@ import OnboardingScreen from '@/screens/OnboardingScreen';
 import PeopleScreen from '@/screens/PeopleScreen';
 import PersonScreen from '@/screens/PersonScreen';
 import SettingsScreen from '@/screens/SettingsScreen';
+import { demoRequested, seedDemo } from '@/demo';
 import { noteUrl } from '@/intent';
 import * as settings from '@/settings';
 import { hydrateAccent, type as scale, useTheme } from '@/theme';
@@ -140,6 +141,10 @@ export default function App() {
   const s = settings.useSettings();
 
   useEffect(() => {
+    // Capture build only (dev + ?demo=1 on web); a no-op everywhere else.
+    void seedDemo().then(() => {
+      if (demoRequested()) void settings.set('onboarded', true);
+    });
     void hydrateAccent();
     void settings.hydrate();
     // Cold start (widget / deep link) and every warm tap while running.

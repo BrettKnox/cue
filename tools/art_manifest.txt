@@ -1,0 +1,14 @@
+# Delivered art -> the name src/art.tsx expects.
+# Identified by looking at each drawing, not by filename: the generator names
+# every file after its timestamp.
+#
+#   <source path> | <art name>
+
+C:\Users\bman0\Downloads\ChatGPT Image Aug 27, 2026, 10_46_08 PM.png | mark
+C:\Users\bman0\Downloads\ChatGPT Image Aug 27, 2026, 10_51_02 PM.png | onboard-hears
+C:\Users\bman0\Downloads\ChatGPT Image Aug 27, 2026, 11_04_15 PM.png | onboard-device
+C:\Users\bman0\Downloads\ChatGPT Image Aug 27, 2026, 11_14_38 PM.png | onboard-asked
+C:\Users\bman0\Downloads\ChatGPT Image Aug 27, 2026, 11_26_11 PM.png | onboard-delete
+C:\Users\bman0\Downloads\ChatGPT Image Aug 27, 2026, 11_29_36 PM.png | live-empty
+C:\Users\bman0\Downloads\ChatGPT Image Aug 27, 2026, 11_35_06 PM.png | history-empty
+C:\Users\bman0\Downloads\ChatGPT Image Aug 27, 2026, 11_50_27 PM.png | people-empty

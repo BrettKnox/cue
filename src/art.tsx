@@ -21,20 +21,20 @@ import { useTheme } from '@/theme';
  * ponytail: commented rather than deleted, so adding art is uncommenting one line.
  */
 const ART: Partial<Record<ArtName, ImageSourcePropType[]>> = {
-  // mark: [require('../assets/art/mark.png')],
-  // onboardHears: [require('../assets/art/onboard-hears.png'),
-  //                require('../assets/art/onboard-hears-f2.png'),
-  //                require('../assets/art/onboard-hears-f3.png')],
-  // onboardDevice: [require('../assets/art/onboard-device.png')],
-  // onboardAsked: [require('../assets/art/onboard-asked.png')],
-  // onboardDelete: [require('../assets/art/onboard-delete.png')],
-  // liveEmpty: [require('../assets/art/live-empty.png'),
-  //             require('../assets/art/live-empty-f2.png'),
-  //             require('../assets/art/live-empty-f3.png')],
-  // historyEmpty: [require('../assets/art/history-empty.png')],
-  // peopleEmpty: [require('../assets/art/people-empty.png'),
-  //               require('../assets/art/people-empty-f2.png'),
-  //               require('../assets/art/people-empty-f3.png')],
+  mark: [require('../assets/art/mark.png')],
+  onboardHears: [require('../assets/art/onboard-hears.png')],
+  onboardDevice: [require('../assets/art/onboard-device.png')],
+  onboardAsked: [require('../assets/art/onboard-asked.png')],
+  onboardDelete: [require('../assets/art/onboard-delete.png')],
+  liveEmpty: [require('../assets/art/live-empty.png')],
+  historyEmpty: [require('../assets/art/history-empty.png')],
+  peopleEmpty: [require('../assets/art/people-empty.png')],
+
+  // Delivered as single frames. The three boil frames per drawing (-f2, -f3)
+  // are not drawn yet, and `Art` treats one frame as a still, so listing a
+  // file that does not exist is the only way to break this — the bundler
+  // resolves requires at build time and a missing one fails the build, not the
+  // screen. Add the frames to the array when they arrive; nothing else changes.
   // searchEmpty: [require('../assets/art/search-empty.png')],
   // flourish: [require('../assets/art/flourish.png')],
 };

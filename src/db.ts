@@ -90,6 +90,12 @@ export async function conversation(id: number): Promise<Conversation | null> {
   return (await d.getFirstAsync<Conversation>('SELECT * FROM conversations WHERE id = ?', id)) ?? null;
 }
 
+/** Backdate a conversation. Only the demo seeder needs this; nothing in the app moves time. */
+export async function setStartedAt(id: number, at: number): Promise<void> {
+  const d = await db();
+  await d.runAsync('UPDATE conversations SET started_at = ? WHERE id = ?', at, id);
+}
+
 export async function conversations(): Promise<Conversation[]> {
   const d = await db();
   return d.getAllAsync<Conversation>('SELECT * FROM conversations ORDER BY started_at DESC');
