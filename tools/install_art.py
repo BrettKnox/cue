@@ -138,7 +138,43 @@ def main() -> int:
     print(f"installing {len(pairs)} file(s) into {ART}")
     ok = sum(install(s, n) for s, n in pairs)
     print(f"\n{ok}/{len(pairs)} installed")
+    check_aspects()
     return 0 if ok == len(pairs) else 1
+
+
+def check_aspects() -> None:
+    """
+    src/art.tsx sizes each drawing from a hand-written ASPECT table, because
+    neither runtime way of reading it works on both platforms. A table can drift
+    from the files, and the failure is silent: a wrong number just crops or
+    stretches. So compare them and print the truth.
+    """
+    tsx = ART.parent.parent / "src" / "art.tsx"
+    if not tsx.exists():
+        return
+    import re
+    body = tsx.read_text(encoding="utf-8")
+    block = re.search(r"const ASPECT[^{]*\{(.*?)\n\};", body, re.S)
+    declared = dict(re.findall(r"(\w+):\s*([\d.]+)", block.group(1))) if block else {}
+
+    def camel(stem: str) -> str:
+        head, *rest = stem.split("-")
+        return head + "".join(w.capitalize() for w in rest)
+
+    print("\naspect table vs files:")
+    bad = 0
+    for f in sorted(ART.glob("*.png")):
+        if re.search(r"-f\d$", f.stem):
+            continue                       # boil frames share frame one's aspect
+        w, h = Image.open(f).size
+        actual = round(w / h, 3)
+        key = camel(f.stem)
+        want = float(declared.get(key, 0))
+        agree = abs(want - actual) < 0.02
+        bad += not agree
+        print(f"  {'ok  ' if agree else 'WRONG'} {key:15} file {actual:<6} table {want or '(missing)'}")
+    if bad:
+        print(f"  -> {bad} entry(ies) need fixing in src/art.tsx")
 
 
 if __name__ == "__main__":

@@ -48,7 +48,7 @@ export default function OnboardingScreen() {
 
         {POINTS.map((p) => (
           <View key={p.title} style={s.point}>
-            <Art name={p.art} size={96} />
+            <Art name={p.art} size={104} />
             <Text style={s.pointTitle}>{p.title}</Text>
             <Text style={s.pointBody}>{p.body}</Text>
           </View>
@@ -68,7 +68,9 @@ const styles = (c: ReturnType<typeof useTheme>) => StyleSheet.create({
   screen: { flex: 1, backgroundColor: c.bg, paddingHorizontal: space.md },
   h1: { fontSize: type.display, fontWeight: '700', color: c.text },
   sub: { fontSize: type.bodyLarge, lineHeight: type.bodyLarge * 1.45, color: c.muted, marginTop: space.xs },
-  point: { gap: space.xs },
-  pointTitle: { fontSize: type.bodyLarge, fontWeight: '700', color: c.text },
-  pointBody: { fontSize: type.body, lineHeight: type.body * 1.5, color: c.muted },
+  // The drawing leads each point, so it is centred over its own text rather
+  // than left-aligned against a paragraph edge, where it read as a stray icon.
+  point: { gap: space.sm, alignItems: 'center' },
+  pointTitle: { fontSize: type.bodyLarge, fontWeight: '700', color: c.text, textAlign: 'center' },
+  pointBody: { fontSize: type.body, lineHeight: type.body * 1.5, color: c.muted, textAlign: 'center' },
 });

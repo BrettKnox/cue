@@ -27,8 +27,15 @@ const ART: Partial<Record<ArtName, ImageSourcePropType[]>> = {
   onboardAsked: [require('../assets/art/onboard-asked.png')],
   onboardDelete: [require('../assets/art/onboard-delete.png')],
   liveEmpty: [require('../assets/art/live-empty.png')],
-  historyEmpty: [require('../assets/art/history-empty.png')],
   peopleEmpty: [require('../assets/art/people-empty.png')],
+
+  // history-empty is DELIVERED but deliberately off. It arrived with the
+  // transparency checkerboard baked into the pixels; keying that out left three
+  // faint short strokes that render as a smudge in the corner of a 120dp box,
+  // and on the real screen it reads as a rendering fault rather than a drawing.
+  // A bad illustration is worse than none, and the text-only fallback is clean.
+  // The file is in assets/art/ ready for a redraw; uncomment when it is redrawn.
+  // historyEmpty: [require('../assets/art/history-empty.png')],
 
   // Delivered as single frames. The three boil frames per drawing (-f2, -f3)
   // are not drawn yet, and `Art` treats one frame as a still, so listing a
@@ -37,6 +44,34 @@ const ART: Partial<Record<ArtName, ImageSourcePropType[]>> = {
   // screen. Add the frames to the array when they arrive; nothing else changes.
   // searchEmpty: [require('../assets/art/search-empty.png')],
   // flourish: [require('../assets/art/flourish.png')],
+};
+
+/**
+ * Width divided by height for each drawing. `tools/install_art.py` prints the
+ * line to paste and warns when this table and the files disagree.
+ *
+ * `size` means HEIGHT, with the width following the aspect. The style used to
+ * be `{ width: size, height: size }` — a square — so every landscape drawing
+ * was letterboxed inside it and the 3:2 onboarding art rendered 96 wide by 64
+ * tall, a third of its intended area, adrift in an empty box. Measured on the
+ * web build rather than noticed by eye.
+ *
+ * Read from a table rather than the asset because neither runtime way works on
+ * both platforms: `Image.resolveAssetSource` does not exist on
+ * react-native-web and threw "resolveAssetSource is not a function", blanking
+ * the whole app, and `onLoad`'s `nativeEvent.source` is empty there, which
+ * would have made web silently disagree with the phone the app ships on.
+ */
+const ASPECT: Partial<Record<ArtName, number>> = {
+  mark: 1,
+  onboardHears: 1.5,
+  onboardDevice: 1.5,
+  onboardAsked: 1.5,
+  onboardDelete: 1.5,
+  liveEmpty: 1,
+  // historyEmpty: kept for the redraw; the entry in ART is commented out.
+  historyEmpty: 1,
+  peopleEmpty: 1.5,
 };
 
 export type ArtName =
@@ -72,6 +107,8 @@ export function Art({ name, size, tint, label }: Props) {
   const [i, setI] = useState(0);
   const [still, setStill] = useState(false);
 
+  const aspect = ASPECT[name] ?? 1;
+
   useEffect(() => {
     void AccessibilityInfo.isReduceMotionEnabled().then(setStill);
     const sub = AccessibilityInfo.addEventListener('reduceMotionChanged', setStill);
@@ -87,10 +124,11 @@ export function Art({ name, size, tint, label }: Props) {
 
   if (!frames?.length) return null;          // not delivered yet — the screen copes
 
+  const src = frames[Math.min(i, frames.length - 1)]!;
   return (
     <Image
-      source={frames[Math.min(i, frames.length - 1)]!}
-      style={{ height: size, width: size, resizeMode: 'contain' }}
+      source={src}
+      style={{ height: size, width: size * aspect, resizeMode: 'contain' }}
       tintColor={tint ?? c.muted}
       accessible={!!label}
       accessibilityRole={label ? 'image' : undefined}
