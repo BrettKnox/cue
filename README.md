@@ -26,8 +26,9 @@ So Cue:
 A doctor's appointment should not reach a server because a language pack was not installed.
 That refusal is the feature; the transcription is just the part you can see.
 
-The only thing that ever leaves the device is transcript **text**, and only when you tap the
-button asking for a summary or an answer. That request goes through a small Cloudflare Worker
+The only thing that ever leaves the device is transcript **text**. Stopping a recording sends
+that transcript once so the recap can be written, and asking a question about a saved
+conversation sends that conversation too. That request goes through a small Cloudflare Worker
 that holds the API key, so **no provider credential ships inside the app** — anything in a JS
 bundle is extractable from the APK. Turn summaries off in Settings and Cue makes no network
 request at all.
