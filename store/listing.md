@@ -1,13 +1,17 @@
 # Cue — Play Store listing
 
 **Package** `com.wukoric.cue` · **Track** internal first · **Privacy policy**
-https://brettknox.github.io/cue/privacy.html
+https://wukoric.com/apps/cue/privacy
+
+<!-- Give Play the canonical URL, not https://brettknox.github.io/cue/privacy.html. That page
+     is now a meta-refresh redirect to this one, kept so old links still land, and a redirect
+     is a bad thing to hand a crawler that has to read the policy to approve the app. -->
 
 ## Short description (80 char max)
 
 Live transcription and recall. The audio never leaves your phone.
 
-<!-- 64 characters. Count before changing it; Play rejects 81. -->
+<!-- 66 characters, counted 2026-09-09. Count before changing it; Play rejects 81. -->
 
 ## Full description
 
@@ -32,9 +36,11 @@ What it does:
 • People you talk to, with your own notes about them
 • Large-text mode, high-contrast colours, and full screen-reader labelling
 
-Summaries and questions are the only things that send anything off the device, they send
-text and never audio, they happen only when you tap the button, and you can turn them off
-completely in Settings. There are no accounts, no analytics, and no ads.
+Summaries and questions are the only things that send anything off the device, and they send
+text, never audio. When you stop a recording, Cue sends that transcript once to write the
+recap. Asking a question about a saved conversation sends that conversation too. Nothing
+else is ever sent, and you can turn summaries off completely in Settings, which makes the
+app fully offline. There are no accounts, no analytics, and no ads.
 
 You can delete any conversation, or everything at once, at any time.
 
@@ -51,12 +57,38 @@ everyone's consent. Please follow the rules where you are.
 
 ## Data safety answers
 
-- Data collected: **None.** Transcripts stay on the device.
-- Data shared: **None.** Transcript text sent for a summary is processed to answer that
-  request and not retained; it is not shared with third parties for their own purposes.
-- Personal or sensitive data: none collected.
-- Audio: **not collected** — processed on device, never recorded or transmitted.
-- Encryption in transit: yes (HTTPS) for the summary request.
-- Data deletion: in-app, Settings → Delete everything.
+**Do not fill this form until the OpenRouter retention setting is confirmed. It decides
+the answers, and getting it wrong is a false declaration, not a typo.**
 
-Re-answer these honestly if a crash reporter or analytics SDK is ever added.
+Play lets you declare data as *not collected* when it is processed **ephemerally**: sent
+off the device, used only to answer the request in real time, and not retained. Cue's
+audio never leaves the phone at all, so audio is genuinely not collected on any reading.
+Transcript **text** is the one that hangs on the exemption, because stopping a recording
+sends that transcript to the summary service through `proxy/worker.js` to OpenRouter.
+
+- Audio: **not collected.** Recognised on device, never recorded to a file, never sent.
+  True regardless of what OpenRouter is set to.
+- Encryption in transit: yes, HTTPS, for the summary and question requests.
+- Data deletion: in-app, Settings, Delete everything.
+- Account: none. Analytics: none. Ads: none. In-app purchases: none.
+
+### If the account enforces zero data retention (check openrouter.ai/settings/privacy)
+
+- Data collected: **None.** The transcript is processed ephemerally to return the recap.
+- Data shared: **None.**
+
+### If it does not
+
+The default for `provider.data_collection` is `allow`, which OpenRouter's own docs
+describe as permitting providers that may store data non-transiently and train on it.
+That is retention, so the ephemeral exemption does not apply and the honest answers are:
+
+- Data collected: **Yes.** Personal info, Other, the transcript text.
+- Data shared: **Yes**, with the model provider, for app functionality.
+- Sensitive: transcripts are conversations and should be treated as such.
+
+Either fix it in the account, or set `provider: {zdr: true}` in `worker.js` (chunk C0d,
+and test the failure mode first, no OpenRouter page says what happens when no provider
+satisfies the constraint), or declare collection honestly. Not all three, but one.
+
+Re-answer all of this if a crash reporter or analytics SDK is ever added.

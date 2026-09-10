@@ -9,7 +9,7 @@ export type TextSize = 'normal' | 'large' | 'huge';
 export type Settings = {
   /** Refuse cloud speech recognition. Audio never leaves the device. */
   onDeviceOnly: boolean;
-  /** Allow transcript TEXT to reach the summary service when the user asks for it. */
+  /** Allow transcript TEXT to reach the summary service. Stopping a recording sends one. */
   summaries: boolean;
   /** Buzz when recording starts and stops. Separate from on-screen press feedback. */
   vibrate: boolean;

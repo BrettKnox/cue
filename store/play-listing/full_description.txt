@@ -13,7 +13,7 @@ What it does:
 • People you talk to, with your own notes about them
 • Large-text mode, high-contrast colours, and full screen-reader labelling
 
-Summaries and questions are the only things that send anything off the device, they send text and never audio, they happen only when you tap the button, and you can turn them off completely in Settings. There are no accounts, no analytics, and no ads.
+Summaries and questions are the only things that send anything off the device, and they send text, never audio. When you stop a recording, Cue sends that transcript once to write the recap. Asking a question about a saved conversation sends that conversation too. Nothing else is ever sent, and you can turn summaries off completely in Settings, which makes the app fully offline. There are no accounts, no analytics, and no ads.
 
 You can delete any conversation, or everything at once, at any time.
 

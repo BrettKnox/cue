@@ -93,7 +93,12 @@ weight: they're the first thing anyone sees, and they're where the app makes its
 > padlock, no shield, no chain — those are the clichés and they all say "security product"
 > rather than "it simply stays here".
 
-### `onboard-asked.png` — "Summaries send text, and only when you ask"
+### `onboard-asked.png` — "Summaries send text, and nothing else"
+
+> The old caption here read "and only when you ask", which was false: stopping a recording
+> sends that transcript on its own. The slide text was corrected 2026-09-09. THE ART STILL
+> WORKS and does not need regenerating: one page leaves the stack and the rest stays, which
+> is true either way. Only the claim on top of it was wrong.
 
 > [STYLE BIBLE]
 > A neat stack of a few pages. One single page has been lifted from the stack and is being
