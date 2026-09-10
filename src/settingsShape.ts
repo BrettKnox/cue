@@ -21,7 +21,12 @@ export type Settings = {
   onboarded: boolean;
 };
 
-/** Private by default: the user opts IN to the cloud, never out of it. */
+/**
+ * Audio is private by default: `onDeviceOnly` opts IN to the cloud, never out of it.
+ * `summaries` is the deliberate exception and ships ON, because a recall app with no
+ * recap is not the product. It means stopping a recording sends that transcript TEXT
+ * once (LiveScreen `end`). Off makes the app fully offline and is one tap away.
+ */
 export const _defaults: Settings = {
   onDeviceOnly: true,
   summaries: true,

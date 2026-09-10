@@ -55,12 +55,13 @@ request at all.
 | Accessible names | every interactive element |
 | Horizontal overflow | none, down to 360 dp |
 
-Current result: **54 states, 0 failures.**
+Current result: **54 states, 0 failures**, written to
+[`docs/audit-result.json`](docs/audit-result.json) by the run itself rather than typed here.
 
 The audit is proven to fail, which is the only thing that makes a green result mean anything.
-Deliberately shrinking a button and lightening the muted colour produced 558 findings. It also
-caught a real regression: adding breathing room to the tab bar pushed its padding into its own
-touch target and dropped it to 46 dp. That was invisible by eye.
+Dropping `TAP` from 48 to 32 and lightening both muted greys turns the same 54 states into
+**528 findings**. It also caught a real regression: adding breathing room to the tab bar pushed
+its padding into its own touch target, below the 48 dp floor. That was invisible by eye.
 
 ## Tests that can't be gamed
 

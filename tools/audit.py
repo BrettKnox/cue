@@ -33,6 +33,7 @@ from playwright.sync_api import sync_playwright
 
 ROOT = Path(__file__).resolve().parent.parent
 DIST = ROOT / "dist"
+RESULT = ROOT / "docs" / "audit-result.json"
 PORT = 8799
 
 WIDTHS = [(360, 800, "phone-min"), (390, 844, "phone"), (800, 1200, "tablet")]
@@ -240,6 +241,10 @@ def main() -> int:
         srv.shutdown()
 
     unique = sorted(set(failures))
+    result = {"screens_checked": checked, "failures": len(unique), "failing": unique}
+    # Write the number down. A README that claims a result the repo cannot show is not
+    # a measurement, and this file is the difference.
+    RESULT.write_text(json.dumps(result, indent=1) + "\n", encoding="utf-8")
     print(json.dumps({"screens_checked": checked, "failures": len(unique)}, indent=1))
     for f in unique:
         # Windows consoles are cp1252; a smart quote in a label must not crash the report.

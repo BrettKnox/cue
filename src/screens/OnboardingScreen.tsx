@@ -23,8 +23,8 @@ const POINTS: { art: ArtName; title: string; body: string }[] = [
   },
   {
     art: 'onboardAsked',
-    title: 'Summaries send text, and only when you ask',
-    body: 'If you want a recap or an answer, the transcript text is sent to Cue’s summary service for that one request. You can turn summaries off completely in Settings.',
+    title: 'Summaries send text, and nothing else',
+    body: 'When you stop a recording, Cue sends that transcript once to Cue’s summary service to write its recap. Typing a question about a saved conversation sends it too. Nothing else is ever sent, and you can turn summaries off completely in Settings.',
   },
   {
     art: 'onboardDelete',

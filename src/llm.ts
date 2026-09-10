@@ -7,8 +7,10 @@
  * The app carries only a proxy token, which can be rotated without a new build. Anything
  * in the JS bundle is extractable from the APK, so a provider key here would be a leak.
  *
- * What leaves the device: transcript TEXT, and only when the user asks for a recap or an
- * answer. Audio never leaves. Summaries can be turned off entirely in Settings.
+ * What leaves the device: transcript TEXT, on exactly two occasions. Stopping a recording
+ * sends that transcript once to write its recap (LiveScreen `end` calls `runRecap`
+ * unconditionally when `summaries` is on), and asking a question about a saved conversation
+ * sends it again. Audio never leaves. Summaries can be turned off entirely in Settings.
  */
 import Constants from 'expo-constants';
 

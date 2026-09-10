@@ -69,7 +69,7 @@ export default function SettingsScreen() {
         />
         <Toggle
           label="Allow summaries"
-          description="Sends the transcript TEXT to Cue's summary service when you ask for a recap or an answer. Audio is never sent."
+          description="Sends the transcript TEXT to Cue's summary service when you stop a recording, and when you ask a question about a saved one. Audio is never sent."
           value={s.summaries}
           onChange={(v) => void settings.set('summaries', v)}
         />

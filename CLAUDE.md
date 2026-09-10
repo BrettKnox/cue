@@ -14,10 +14,15 @@ accessibility framing.
    start** rather than silently falling back to Google's cloud recogniser. Android's
    default recogniser uploads audio; asking for offline is not optional decoration. The
    Live screen shows which engine is actually in use.
-2. **Transcript text leaves only when the user asks.** Recap and Ask send text to Cue's
-   proxy on an explicit action. Nothing is uploaded in the background, and Settings turns
-   summaries off entirely. The onboarding, the privacy policy, the site copy and the Play
-   data-safety form all have to keep saying exactly this.
+2. **Transcript text leaves at two moments and never otherwise.** Stopping a recording
+   sends that transcript once so the recap can be written (`LiveScreen.end` calls
+   `runRecap` **unconditionally** while `summaries` is on), and asking a question about a
+   saved conversation sends it again. Nothing is uploaded in the background, and Settings
+   turns summaries off entirely. The onboarding, the privacy policy, the site copy and the
+   Play data-safety form all have to keep saying exactly this. **Corrected 2026-09-09**:
+   this section, `llm.ts`, `settingsShape.ts`, the Settings toggle, the onboarding slide
+   and the live privacy page all previously said the send happened only on an explicit
+   request, which is not what `end()` does. Read the call site, not the comment.
 
 ## What — module map
 Expo SDK 56 / RN 0.85 / React 19, TypeScript, react-navigation bottom tabs with a native
@@ -86,8 +91,11 @@ app still reported "No summary service is set up for this build". Verify with
 `python tools/audit.py` builds the web export and drives it across **3 widths x 2 schemes
 x 2 accents x every screen — 54 states**, asserting 48dp targets, 4.5:1 contrast against
 the real backdrop, a 12px text floor, accessible names, and no horizontal overflow. It is
-proven to fail: breaking the button height and the muted colour produced 558 findings, and
-it caught a real regression when the tab bar's padding ate into its own touch target.
+proven to fail: with `TAP` dropped to 32 and both muted greys lightened, the same 54 states
+produce **528 findings** (reproduced 2026-09-09; the older "558" cited a break whose
+parameters were never written down, so nobody could re-run it). It also caught a real
+regression when the tab bar's padding ate into its own touch target. Every run now writes
+`docs/audit-result.json`, so the number in the README is checkable instead of remembered.
 
 Web is a **test lane only**. TalkBack, real OS font scaling, the native recogniser and the
 airplane-mode proof all need the device.
