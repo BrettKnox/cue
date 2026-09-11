@@ -63,8 +63,29 @@ everyone's consent. Please follow the rules where you are.
 
 ## Data safety answers
 
-**Do not fill this form until the OpenRouter retention setting is confirmed. It decides
-the answers, and getting it wrong is a false declaration, not a typo.**
+**ANSWERED 2026-09-10, read off openrouter.ai/settings/privacy in the signed-in account.
+The setting is NOT in Cue's favour, so the branch below that applies is "If it does not".**
+
+| Toggle | State | What it means for Cue |
+|---|---|---|
+| Zero Data Retention, All other models | **OFF** | nothing stops routing to an endpoint that stores the transcript |
+| ZDR, Anthropic / OpenAI / Google / SpaceXAI | **OFF** | irrelevant here, the model is DeepSeek |
+| Allow **paid** endpoints that train on request data | **OFF** | good, and it is the one that covers Cue |
+| Allow **free** endpoints that train on request data | **ON** | does not reach Cue: `worker.js` pins `deepseek/deepseek-v4-flash`, a paid id, so no free endpoint is ever requested |
+| Allow free endpoints that publish prompts | OFF | same reason |
+
+So the position today is: **transcripts will not be trained on, and may be retained.**
+Training is excluded by the paid-endpoints toggle. Retention is not excluded by anything,
+and retention is precisely what the ephemeral-processing exemption requires the absence of.
+
+**Therefore the honest answer today is Data collected: Yes.** To get to No, one of two
+things has to change first: turn on Zero Data Retention for "All other models" in the
+account, or set `provider: {zdr: true}` in `worker.js` (chunk C0d). Do not file the form
+before one of those lands, and do not assume either is free: **check first whether any
+`deepseek/deepseek-v4-flash` endpoint is ZDR at all**, because if none is, enabling it
+turns every recap into a hard failure. That is the failure mode C0d exists to test, and
+the public endpoints API does not expose the data policy, so it has to be read from the
+model's providers page while signed in.
 
 Play lets you declare data as *not collected* when it is processed **ephemerally**: sent
 off the device, used only to answer the request in real time, and not retained. Transcript
@@ -89,16 +110,18 @@ Android's default recogniser, which streams audio to Google.
 - Data deletion: in-app, Settings, Delete everything.
 - Account: none. Analytics: none. Ads: none. In-app purchases: none.
 
-### If the account enforces zero data retention (check openrouter.ai/settings/privacy)
+### If the account enforces zero data retention (it does NOT today, checked 2026-09-10)
 
 - Data collected: **None.** The transcript is processed ephemerally to return the recap.
 - Data shared: **None.**
 
-### If it does not
+### If it does not: THIS IS THE LIVE BRANCH AS OF 2026-09-10
 
-The default for `provider.data_collection` is `allow`, which OpenRouter's own docs
-describe as permitting providers that may store data non-transiently and train on it.
-That is retention, so the ephemeral exemption does not apply and the honest answers are:
+The account leaves Zero Data Retention off for all models, and `worker.js` sends no
+`provider` block, so the request carries no retention constraint of any kind. Training is
+separately excluded, because the paid-endpoints training toggle is off and the pinned
+model is a paid id. Retention is not excluded by anything, and it is retention the
+ephemeral exemption turns on, so the honest answers are:
 
 - Data collected: **Yes.** Personal info, Other, the transcript text.
 - Data shared: **Yes**, with the model provider, for app functionality.
