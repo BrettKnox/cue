@@ -23,6 +23,7 @@ from __future__ import annotations
 import functools
 import http.server
 import json
+import os
 import socketserver
 import subprocess
 import sys
@@ -41,9 +42,11 @@ SCHEMES = ["light", "dark"]
 ACCENTS = ["blue", "green"]
 TABS = ["Live", "History", "People", "Settings"]
 
-MIN_TAP = 48
-MIN_FONT = 12
-MIN_CONTRAST = 4.5
+# Overridable so the "proven to fail" claim is a command anyone can run, not a number
+# somebody typed into the README once. Raise the bar, watch the same states fail.
+MIN_TAP = int(os.environ.get("CUE_AUDIT_MIN_TAP", 48))
+MIN_FONT = int(os.environ.get("CUE_AUDIT_MIN_FONT", 12))
+MIN_CONTRAST = float(os.environ.get("CUE_AUDIT_MIN_CONTRAST", 4.5))
 
 
 def luminance(rgb: list[int]) -> float:

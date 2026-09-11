@@ -18,8 +18,8 @@ const POINTS: { art: ArtName; title: string; body: string }[] = [
   },
   {
     art: 'onboardDevice',
-    title: 'The audio never leaves your phone',
-    body: 'Cue uses your phone’s own offline speech recogniser. No recording is uploaded, and nothing is stored anywhere but here.',
+    title: 'The audio stays on your phone',
+    body: 'Cue uses your phone’s own offline speech recogniser, and refuses to start rather than fall back to a server. No recording is uploaded, and nothing is stored anywhere but here. If your phone cannot transcribe offline you can allow cloud recognition in Settings, and the Live screen shows a red Cloud badge whenever it is on.',
   },
   {
     art: 'onboardAsked',

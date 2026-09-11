@@ -116,14 +116,21 @@ export function useTranscription({
     }
 
     let offline = await probe();
-    if (!offline && onDeviceOnly && Platform.OS === 'android') {
-      // Offer the download rather than silently going to the cloud.
-      try {
-        const r = await ExpoSpeechRecognitionModule.androidTriggerOfflineModelDownload({ locale: lang });
-        offline = r.status === 'download_success';
-        setError(offline ? null : 'Downloading the offline language pack. Try again once it finishes.');
-      } catch {
-        setError('This device cannot transcribe offline yet. Turn off "Keep audio on device" in Settings to use cloud recognition.');
+    if (!offline && onDeviceOnly) {
+      // The download offer is Android-only, but the REFUSAL must not be: this branch used to
+      // carry `&& Platform.OS === 'android'`, which meant iOS ignored the setting entirely and
+      // fell through to Apple's server recogniser while Settings promised it would refuse.
+      if (Platform.OS === 'android') {
+        // Offer the download rather than silently going to the cloud.
+        try {
+          const r = await ExpoSpeechRecognitionModule.androidTriggerOfflineModelDownload({ locale: lang });
+          offline = r.status === 'download_success';
+          setError(offline ? null : 'Downloading the offline language pack. Try again once it finishes.');
+        } catch {
+          setError('This device cannot transcribe offline yet. Turn off "Keep audio on this device" in Settings to use cloud recognition.');
+        }
+      } else {
+        setError('This device cannot transcribe offline yet. Turn off "Keep audio on this device" in Settings to use cloud recognition.');
       }
       if (!offline) return false;
     }

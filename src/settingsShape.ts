@@ -7,7 +7,8 @@
 export type TextSize = 'normal' | 'large' | 'huge';
 
 export type Settings = {
-  /** Refuse cloud speech recognition. Audio never leaves the device. */
+  /** When ON (the default), refuse cloud speech recognition: audio never leaves the device.
+   *  When OFF, the platform recogniser handles the audio, which means it leaves. */
   onDeviceOnly: boolean;
   /** Allow transcript TEXT to reach the summary service. Stopping a recording sends one. */
   summaries: boolean;

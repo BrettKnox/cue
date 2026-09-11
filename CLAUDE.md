@@ -9,7 +9,10 @@ marketable portfolio piece: assistive tech is a real need with thin competition 
 accessibility framing.
 
 ## The two promises the code has to keep
-1. **Audio never leaves the phone.** `src/transcribe.ts` forces the offline recogniser
+1. **Audio stays on the phone by default, and the default is the promise.** Say it that way
+   in anything public: the unconditional version was in six public places until 2026-09-10
+   and it is false for a user who turns the switch off. `src/transcribe.ts` forces the
+   offline recogniser
    (`com.google.android.as`) and, when `onDeviceOnly` is on — the default — **refuses to
    start** rather than silently falling back to Google's cloud recogniser. Android's
    default recogniser uploads audio; asking for offline is not optional decoration. The
@@ -114,4 +117,7 @@ Two build deps exist purely because this project was hand-scaffolded rather than
   broken logic at least once; that is what makes it evidence.
 - **Accessibility is the product, not a checkbox.** Re-run the audit after any UI change.
   Benchmark: the core flow should be completable with the screen off.
-- Transcripts stay on the device unless the user asks for a summary.
+- Transcripts stay on the device unless summaries are on, and summaries ship ON, so
+  stopping a recording sends that transcript. The old version of this line said "unless the
+  user asks for a summary", which is the same false claim this file was corrected for on
+  2026-09-09 and which survived here because nobody re-read the rules section.

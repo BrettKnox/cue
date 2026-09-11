@@ -9,9 +9,12 @@ https://wukoric.com/apps/cue/privacy
 
 ## Short description (80 char max)
 
-Live transcription and recall. The audio never leaves your phone.
+Live transcription and recall. Audio stays on your phone by default.
 
-<!-- 66 characters, counted 2026-09-09. Count before changing it; Play rejects 81. -->
+<!-- 68 characters, counted 2026-09-10 with awk against the .txt, not by eye. Count before
+     changing it; Play rejects 81. "by default" is load-bearing: the app ships a Settings
+     switch that opts in to cloud recognition, so an unconditional claim here would be false
+     for anyone who turns it off. -->
 
 ## Full description
 
@@ -22,10 +25,13 @@ It is built for the gap between hearing something and being able to retrieve it 
 that gap comes from a memory or processing difference, from hearing loss, from ADHD, or
 simply from a meeting that ran ninety minutes.
 
-**The audio never leaves your phone.** Cue uses your phone's own offline speech
-recogniser, so nothing is uploaded and nothing is recorded to a file. If the offline
-recogniser is unavailable, Cue refuses to start rather than quietly sending your
-conversation to a server.
+**Audio stays on your phone.** Cue uses your phone's own offline speech recogniser, so
+nothing is uploaded and nothing is recorded to a file. If the offline recogniser is
+unavailable, Cue refuses to start rather than quietly sending your conversation to a
+server. There is one exception and it is yours to make: a phone that cannot transcribe
+offline can use cloud recognition instead, by turning off "Keep audio on this device" in
+Settings. That switch ships on, so the offline path is what you get unless you change it,
+and while it is off the Live screen shows a red Cloud badge.
 
 What it does:
 
@@ -61,13 +67,24 @@ everyone's consent. Please follow the rules where you are.
 the answers, and getting it wrong is a false declaration, not a typo.**
 
 Play lets you declare data as *not collected* when it is processed **ephemerally**: sent
-off the device, used only to answer the request in real time, and not retained. Cue's
-audio never leaves the phone at all, so audio is genuinely not collected on any reading.
-Transcript **text** is the one that hangs on the exemption, because stopping a recording
-sends that transcript to the summary service through `proxy/worker.js` to OpenRouter.
+off the device, used only to answer the request in real time, and not retained. Transcript
+**text** hangs on that exemption, because stopping a recording sends that transcript to the
+summary service through `proxy/worker.js` to OpenRouter.
 
-- Audio: **not collected.** Recognised on device, never recorded to a file, never sent.
-  True regardless of what OpenRouter is set to.
+**Audio is the answer that changed on 2026-09-10 and it is the one to get right.** The old
+answer here said audio never leaves the phone at all, so it is not collected on any reading.
+That is true on default settings and false as an unconditional statement, because
+`src/screens/SettingsScreen.tsx` ships a "Keep audio on this device" switch, and
+`src/transcribe.ts:119` gates the refusal on it. Turn it off and `begin()` runs with
+`requiresOnDeviceRecognition: false` and no `androidRecognitionServicePackage`, which is
+Android's default recogniser, which streams audio to Google.
+
+- Audio: **not collected on default settings**, and that is the sentence to give Play.
+  Recognised on device, never recorded to a file, never sent, because the app refuses to
+  start rather than fall back. A user who turns the switch off is opting in to Google's
+  own recogniser, which is a separate processor's collection and not Cue's; Cue still
+  records nothing to a file and still sends nothing to Cue's own services. True regardless
+  of what OpenRouter is set to, because no audio path touches OpenRouter.
 - Encryption in transit: yes, HTTPS, for the summary and question requests.
 - Data deletion: in-app, Settings, Delete everything.
 - Account: none. Analytics: none. Ads: none. In-app purchases: none.

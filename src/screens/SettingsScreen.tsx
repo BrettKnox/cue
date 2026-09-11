@@ -15,7 +15,10 @@ import { ACCENT_NAMES, useAccent } from '@/theme';
 import type { TextSize } from '@/settingsShape';
 import { space, type, useTheme } from '@/theme';
 
-const PRIVACY_URL = 'https://brettknox.github.io/cue/privacy.html';
+// The canonical policy. The old github.io URL is a meta-refresh stub kept for old links,
+// and sending the in-app Privacy button through a redirect is a worse answer than linking
+// the page itself.
+const PRIVACY_URL = 'https://wukoric.com/apps/cue/privacy';
 const SIZES: TextSize[] = ['normal', 'large', 'huge'];
 
 export default function SettingsScreen() {

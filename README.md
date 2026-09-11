@@ -1,6 +1,8 @@
 # Cue
 
-**Live transcription and recall for conversations. The audio never leaves your phone.**
+**Live transcription and recall for conversations. Audio stays on your phone by default:
+the offline recogniser is forced and recording refuses to start rather than fall back, and
+the one switch that changes that ships on.**
 
 Cue writes down the conversation you are in, as it happens, and keeps it so you can read it
 back later. It is built for the gap between hearing something and being able to retrieve it —
@@ -45,7 +47,8 @@ request at all.
 ## Accessibility is the product, not a checklist
 
 `tools/audit.py` builds the app, serves it, and drives it across **54 screen states** —
-3 widths × 2 colour schemes × 2 accent palettes × every screen — asserting:
+3 widths × 2 colour schemes × 2 accent palettes × the four tabs, plus onboarding once per
+width and scheme — asserting:
 
 | Check | Threshold |
 |---|---|
@@ -59,10 +62,23 @@ request at all.
 Current result: **54 states, 0 failures**, written to
 [`docs/audit-result.json`](docs/audit-result.json) by the run itself rather than typed here.
 
-The audit is proven to fail, which is the only thing that makes a green result mean anything.
-Dropping `TAP` from 48 to 32 and lightening both muted greys turns the same 54 states into
-**528 findings**. It also caught a real regression: adding breathing room to the tab bar pushed
-its padding into its own touch target, below the 48 dp floor. That was invisible by eye.
+**What it does not cover**, because "every screen" was the wrong words until 2026-09-10:
+`ConversationScreen` and `PersonScreen` are never visited. The walk is the four tabs
+(`Live`, `History`, `People`, `Settings`) plus the onboarding gate, so two of the app's seven
+screens have never been through it. Both are reached by tapping a row that only exists once
+there is data, which is why they were skipped, and that is a gap to close, not a detail.
+
+The audit is proven to fail, which is the only thing that makes a green result mean anything,
+and the proof is a command rather than a number somebody typed here:
+
+```bash
+CUE_AUDIT_MIN_CONTRAST=7.0 python tools/audit.py --no-build
+```
+
+Raising the contrast bar from AA to AAA turns the same 54 green states into **57 failures**,
+measured 2026-09-10. It also caught a real regression once: adding breathing room to the tab
+bar pushed its padding into its own touch target, below the 48 dp floor. That was invisible
+by eye. `CUE_AUDIT_MIN_TAP` and `CUE_AUDIT_MIN_FONT` move the other two bars the same way.
 
 ## Tests that can't be gamed
 
@@ -97,6 +113,7 @@ Deploy the proxy yourself from `proxy/` — it holds the provider key as a Worke
 
 ```bash
 npx wrangler secret put OPENROUTER_API_KEY --config proxy/wrangler.jsonc
+npx wrangler secret put CUE_PROXY_TOKEN    --config proxy/wrangler.jsonc
 npx wrangler deploy --config proxy/wrangler.jsonc
 ```
 

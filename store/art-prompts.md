@@ -83,7 +83,7 @@ weight: they're the first thing anyone sees, and they're where the app makes its
 > the middle caught halfway between wave and line, mid-transformation. The whole image reads
 > left to right as sound becoming writing. No mouth, no person, no speech bubble, no device.
 
-### `onboard-device.png` — "The audio never leaves your phone"
+### `onboard-device.png` — "The audio stays on your phone"
 
 > [STYLE BIBLE]
 > A simple closed shape — a rounded rectangle drawn as a single hand-inked outline — with a
