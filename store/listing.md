@@ -1,4 +1,4 @@
-# Cue — Play Store listing
+# Cue: Play Store listing
 
 **Package** `com.wukoric.cue` · **Track** internal first · **Privacy policy**
 https://wukoric.com/apps/cue/privacy
@@ -21,7 +21,7 @@ Live transcription and recall. Audio stays on your phone by default.
 Cue writes down the conversation you are in, as it happens, and keeps it so you can read
 it back later.
 
-It is built for the gap between hearing something and being able to retrieve it — whether
+It is built for the gap between hearing something and being able to retrieve it, whether
 that gap comes from a memory or processing difference, from hearing loss, from ADHD, or
 simply from a meeting that ran ninety minutes.
 
@@ -88,6 +88,14 @@ Parasail, DigitalOcean, Venice, NextBit, Phala, Mancer 2 and Azure. DigitalOcean
 is also the cheapest endpoint on the board, so this costs nothing in price or availability.
 `node proxy/check-zdr.mjs` re-checks it in thirty seconds and fails loudly if that ever stops
 being true.
+
+**One caveat to carry into the form rather than discover later.** OpenRouter's ZDR page says
+plainly that it treats in-memory prompt caching as not retaining data, so an endpoint with
+implicit caching can still be routed to under a ZDR policy. That is consistent with what Play
+means by ephemeral processing (used to answer the request, not stored), but it is a stance
+rather than an absence, so it is written here rather than left to be found by someone reading
+the docs after the form is filed. OpenRouter also states its own policy: prompts are not
+retained unless prompt logging is opted into, and Cue does not opt in.
 
 Note what the providers page badge does NOT tell you. "Private" versus "Logs" there is the
 **training** policy, and OpenRouter's own docs say plainly that it "does not have routing

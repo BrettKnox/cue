@@ -1,6 +1,6 @@
 Cue writes down the conversation you are in, as it happens, and keeps it so you can read it back later.
 
-It is built for the gap between hearing something and being able to retrieve it — whether that gap comes from a memory or processing difference, from hearing loss, from ADHD, or simply from a meeting that ran ninety minutes.
+It is built for the gap between hearing something and being able to retrieve it, whether that gap comes from a memory or processing difference, from hearing loss, from ADHD, or simply from a meeting that ran ninety minutes.
 
 Audio stays on your phone. Cue uses your phone's own offline speech recogniser, so nothing is uploaded and nothing is recorded to a file. If the offline recogniser is unavailable, Cue refuses to start rather than quietly sending your conversation to a server. There is one exception and it is yours to make: a phone that cannot transcribe offline can use cloud recognition instead, by turning off "Keep audio on this device" in Settings. That switch ships on, so the offline path is what you get unless you change it, and while it is off the Live screen shows a red Cloud badge.
 
