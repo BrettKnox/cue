@@ -47,6 +47,20 @@ export default {
       },
       body: JSON.stringify({
         model: MODEL,
+        // Route ONLY to endpoints that do not store the request. Without this the account
+        // default applies, and on 2026-09-10 that default was Zero Data Retention OFF on
+        // every scope, which means a transcript could be retained non-transiently. Retention
+        // is the exact thing Play's ephemeral-processing exemption requires the absence of,
+        // so this line is what lets the Data safety form say "not collected".
+        //
+        // The feared failure mode, "no provider satisfies the constraint so every recap
+        // hard-fails", does not apply to this model. OpenRouter publishes the authoritative
+        // list at https://openrouter.ai/api/v1/endpoints/zdr, and on 2026-09-11
+        // deepseek/deepseek-v4-flash had TEN ZDR endpoints: DeepInfra, SiliconFlow, Novita,
+        // Parasail, DigitalOcean, Venice, NextBit, Phala, Mancer 2 and Azure. DigitalOcean is
+        // ZDR and is also the cheapest endpoint on the board, so this costs nothing either.
+        // Re-check that URL before changing MODEL.
+        provider: { zdr: true },
         messages: body.messages,
         response_format: body.response_format,
         max_tokens: Math.min(body.max_tokens || MAX_TOKENS, MAX_TOKENS),

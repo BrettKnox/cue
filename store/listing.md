@@ -78,14 +78,26 @@ So the position today is: **transcripts will not be trained on, and may be retai
 Training is excluded by the paid-endpoints toggle. Retention is not excluded by anything,
 and retention is precisely what the ephemeral-processing exemption requires the absence of.
 
-**Therefore the honest answer today is Data collected: Yes.** To get to No, one of two
-things has to change first: turn on Zero Data Retention for "All other models" in the
-account, or set `provider: {zdr: true}` in `worker.js` (chunk C0d). Do not file the form
-before one of those lands, and do not assume either is free: **check first whether any
-`deepseek/deepseek-v4-flash` endpoint is ZDR at all**, because if none is, enabling it
-turns every recap into a hard failure. That is the failure mode C0d exists to test, and
-the public endpoints API does not expose the data policy, so it has to be read from the
-model's providers page while signed in.
+**That was the position for about an hour. `worker.js` now sends `provider: {zdr: true}`,
+so the request carries its own retention constraint and the account default stops deciding.**
+
+The feared failure mode does not exist for this model. OpenRouter publishes an authoritative,
+auto-updated list at <https://openrouter.ai/api/v1/endpoints/zdr>, and on 2026-09-11
+`deepseek/deepseek-v4-flash` had **ten** ZDR endpoints: DeepInfra, SiliconFlow, Novita,
+Parasail, DigitalOcean, Venice, NextBit, Phala, Mancer 2 and Azure. DigitalOcean is ZDR and
+is also the cheapest endpoint on the board, so this costs nothing in price or availability.
+`node proxy/check-zdr.mjs` re-checks it in thirty seconds and fails loudly if that ever stops
+being true.
+
+Note what the providers page badge does NOT tell you. "Private" versus "Logs" there is the
+**training** policy, and OpenRouter's own docs say plainly that it "does not have routing
+rules that change based on data retention policies of providers". Training and retention are
+two different axes, and the ZDR list is the only thing that answers the retention one.
+
+**THE FORM STILL CANNOT SAY "not collected" UNTIL THE WORKER IS DEPLOYED.** Play is asking
+about the app as shipped, and the app talks to whatever is running at the Worker URL, not to
+what is in this repo. So: `npx wrangler deploy --config proxy/wrangler.jsonc`, confirm one
+recap still works, and then the branch below flips from the second to the first.
 
 Play lets you declare data as *not collected* when it is processed **ephemerally**: sent
 off the device, used only to answer the request in real time, and not retained. Transcript
@@ -110,18 +122,16 @@ Android's default recogniser, which streams audio to Google.
 - Data deletion: in-app, Settings, Delete everything.
 - Account: none. Analytics: none. Ads: none. In-app purchases: none.
 
-### If the account enforces zero data retention (it does NOT today, checked 2026-09-10)
+### If zero data retention is enforced: TRUE ONCE THE WORKER IS DEPLOYED, via provider.zdr
 
 - Data collected: **None.** The transcript is processed ephemerally to return the recap.
 - Data shared: **None.**
 
-### If it does not: THIS IS THE LIVE BRANCH AS OF 2026-09-10
+### If it is not: the live branch until `wrangler deploy` runs
 
-The account leaves Zero Data Retention off for all models, and `worker.js` sends no
-`provider` block, so the request carries no retention constraint of any kind. Training is
-separately excluded, because the paid-endpoints training toggle is off and the pinned
-model is a paid id. Retention is not excluded by anything, and it is retention the
-ephemeral exemption turns on, so the honest answers are:
+The account still leaves Zero Data Retention off for all models. Until the Worker carrying
+`provider: {zdr: true}` is deployed, the request in flight carries no retention constraint,
+so this is what a truthful form says:
 
 - Data collected: **Yes.** Personal info, Other, the transcript text.
 - Data shared: **Yes**, with the model provider, for app functionality.
